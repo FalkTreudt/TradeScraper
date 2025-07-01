@@ -1,28 +1,32 @@
-import asyncio
-from pyppeteer import launch
+from selenium import webdriver
+from selenium.webdriver.firefox.service import Service
+from selenium.webdriver.firefox.options import Options
+from selenium.webdriver.common.by import By
 
+# Firefox Optionen erstellen
+firefox_options = Options()
+firefox_options.add_argument('--headless')  # Headless-Modus aktivieren
+firefox_options.add_argument('--no-sandbox')  # Verhindert Sandbox-Probleme
+firefox_options.add_argument('--disable-dev-shm-usage')  # Verhindert Shared Memory-Probleme
 
-async def main():
-    # Starte den Headless-Browser
-    browser = await launch(headless=True)
-    page = await browser.newPage()
+# Geckodriver Service
+gecko_driver_path = '/usr/local/bin/geckodriver'  # Wenn du Geckodriver an einem anderen Ort installiert hast, passe den Pfad an
+service = Service(gecko_driver_path)
 
-    # Besuche die Website
-    await page.goto('https://www.example.com')
+# Firefox WebDriver starten
+driver = webdriver.Firefox(service=service, options=firefox_options)
 
-    # Extrahiere alle Links von der Seite
-    links = await page.evaluate('''() => {
-        const links = Array.from(document.querySelectorAll('a'));
-        return links.map(link => link.href);
-    }''')
+# Beispiel: URL aufrufen
+driver.get('https://www.example.com')
 
-    # Gebe alle Links aus
-    for link in links:
-        print(link)
+# Beispiel: Alle Links auf der Seite auslesen
+links = driver.find_elements(By.TAG_NAME, 'a')
 
-    # Schließe den Browser
-    await browser.close()
+# Alle Links ausdrucken
+for link in links:
+    href = link.get_attribute('href')
+    if href:
+        print(f'Link: {href}')
 
-
-# Starte das Skript
-asyncio.get_event_loop().run_until_complete(main())
+# WebDriver schließen
+driver.quit()
