@@ -1,32 +1,41 @@
 from selenium import webdriver
-from selenium.webdriver.firefox.service import Service
-from selenium.webdriver.firefox.options import Options
 from selenium.webdriver.common.by import By
+from selenium.webdriver.chrome.options import Options
+import time
 
-# Firefox Optionen erstellen
-firefox_options = Options()
-firefox_options.add_argument('--headless')  # Headless-Modus aktivieren
-firefox_options.add_argument('--no-sandbox')  # Verhindert Sandbox-Probleme
-firefox_options.add_argument('--disable-dev-shm-usage')  # Verhindert Shared Memory-Probleme
+# Chrome-Optionen für Headless-Modus
+chrome_options = Options()
+chrome_options.add_argument('--headless')  # Keine GUI
+chrome_options.add_argument('--no-sandbox')  # Verhindert Fehler durch Sandboxing
+chrome_options.add_argument('--disable-dev-shm-usage')  # Verhindert Shared Memory-Probleme
 
-# Geckodriver Service
-gecko_driver_path = '/usr/local/bin/geckodriver'  # Wenn du Geckodriver an einem anderen Ort installiert hast, passe den Pfad an
-service = Service(gecko_driver_path)
+# Pfad zu `chromedriver` auf dem Raspberry Pi
+chromedriver_path = '/usr/lib/chromium-browser/chromedriver'
 
-# Firefox WebDriver starten
-driver = webdriver.Firefox(service=service, options=firefox_options)
+# Starte den WebDriver
+driver = webdriver.Chrome(executable_path=chromedriver_path, options=chrome_options)
 
-# Beispiel: URL aufrufen
+# Beispiel: Besuche eine Webseite
 driver.get('https://www.example.com')
 
-# Beispiel: Alle Links auf der Seite auslesen
-links = driver.find_elements(By.TAG_NAME, 'a')
+# Beispiel: Suche nach einem Element auf der Seite und interagiere damit
+# Zum Beispiel ein Eingabefeld ausfüllen
+search_box = driver.find_element(By.NAME, 'q')  # Beispiel: Google-Suchfeld
+search_box.send_keys('Automatisierungstests mit Selenium')
 
-# Alle Links ausdrucken
+# Beispiel: Klick auf einen Button (falls vorhanden)
+search_button = driver.find_element(By.NAME, 'btnK')  # Beispiel: Google Suchbutton
+search_button.click()
+
+# Warte ein paar Sekunden, um die Interaktion abzuschließen
+time.sleep(3)
+
+# Beispiel: Extrahiere alle Links von der Seite
+links = driver.find_elements(By.TAG_NAME, 'a')
 for link in links:
     href = link.get_attribute('href')
     if href:
-        print(f'Link: {href}')
+        print(f'Gefundener Link: {href}')
 
-# WebDriver schließen
+# Schließe den WebDriver
 driver.quit()
