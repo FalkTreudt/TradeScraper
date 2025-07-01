@@ -17,12 +17,11 @@ service = Service(gecko_driver_path)
 driver = webdriver.Firefox(service=service, options=firefox_options)
 
 # Beispiel: URL aufrufen
-driver.get('https://www.google.com/?hl=de&zx=1751373259440&no_sw_cr=1')
+driver.get('https://www.example.com')
 
 # Beispiel: Alle Links auf der Seite auslesen
 links = driver.find_elements(By.TAG_NAME, 'a')
 
-# Alle Links ausdrucken
 for link in links:
     href = link.get_attribute('href')
     if href:
