@@ -13,6 +13,9 @@ class TradeRepublic:
         self.driver = driver
         self.url = 'https://app.traderepublic.com/login'
 
+    def HandleWebDriverSignature(self):
+        # Manipulation von JavaScript, um "navigator.webdriver" zu falsifizieren
+        self.driver.execute_script("Object.defineProperty(navigator, 'webdriver', {get: () => undefined})")
 
     #Clicks CookieButton
     def HandleCookies(self):
@@ -76,32 +79,37 @@ class TradeRepublic:
             print(f"Fehler beim Klicken auf den Button: {e}")
 
     def EnterPin(self):
-        print("begin FillPasswordFields")
+        print("begin HandlePinInput")
 
         try:
-            # Warten, bis alle 4 Passwortfelder sichtbar sind
-            inputs = WebDriverWait(self.driver, 2).until(
+            print("Warten auf die PIN-Eingabefelder")
+
+            # Warte, bis alle 4 PIN-Eingabefelder sichtbar sind
+            pin_inputs = WebDriverWait(self.driver, 4).until(
                 EC.presence_of_all_elements_located((By.CLASS_NAME, "codeInput__character"))
             )
 
-            # Die Eingabewerte
-            values = ['3', '1', '4', '1']
+            # Die PIN Zahlen
+            pin_values = ['3', '1', '4', '1']
 
-            # Durch jedes Input-Feld iterieren und die Werte eingeben
-            for i, input_field in enumerate(inputs):
-                input_field.send_keys(values[i])  # Sendet die entsprechenden Zahlen
-                print(f"Zahl {values[i]} in das Feld {i + 1} eingegeben")
-                time.sleep(1)
+            # Gebe die PIN nacheinander ein, mit Verzögerung
+            for i, pin_field in enumerate(pin_inputs):
+                pin_field.send_keys(pin_values[i])
+                time.sleep(0.5)  # Verzögerung für realistischere Eingabe
+
+            print("PIN wurde erfolgreich eingegeben!")
 
         except Exception as e:
-            print(f"Fehler beim Ausfüllen der Passwortfelder: {e}")
+            print(f"Fehler beim Eingeben der PIN: {e}")
 
     #Logging in to TradeRepublic
     def Login(self):
         self.driver.get(self.url)
+        self.HandleWebDriverSignature()
         self.HandleCookies()
         self.EnterPhoneNumber()
         self.EnterPin()
+        time.sleep(2000)
 
 
 
