@@ -5,7 +5,8 @@ from selenium.webdriver.common.action_chains import ActionChains
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 import time
-
+import re
+import plotly.graph_objects as go
 
 class TradeRepublic:
 
@@ -95,12 +96,101 @@ class TradeRepublic:
             # Gebe die PIN nacheinander ein, mit Verzögerung
             for i, pin_field in enumerate(pin_inputs):
                 pin_field.send_keys(pin_values[i])
-                time.sleep(0.5)  # Verzögerung für realistischere Eingabe
+                time.sleep(0.1)  # Verzögerung für realistischere Eingabe
 
             print("PIN wurde erfolgreich eingegeben!")
 
         except Exception as e:
             print(f"Fehler beim Eingeben der PIN: {e}")
+
+    def GetData(self):
+        # Warten, bis das Diagramm geladen ist
+        try:
+            chart = self.driver.find_element(By.ID, 'mainChart')  # Das SVG-Element
+        except Exception as e:
+            print("Fehler: Das Chart-Element konnte nicht gefunden werden.", e)
+            return []  # Falls das Chart-Element nicht gefunden wird, eine leere Liste zurückgeben
+
+        # Extrahieren der 'd'-Eigenschaft des SVG-Pfads, der die Preislinie enthält
+        path = self.driver.find_element(By.ID, 'chartPriceLine')
+        d_attr = path.get_attribute('d')
+
+        # Extrahieren der X- und Y-Koordinaten aus dem 'd'-Attribut
+        # Die 'L' (Linie) und 'M' (Move To) Kommandos enthalten die Koordinaten
+        coordinates = re.findall(r'[ML]\s?(\d+\.\d+),(\d+\.\d+)', d_attr)
+
+        # Erstellen von leeren Listen für X-Werte (Zeitpunkte) und Y-Werte (Preise)
+        x_values = []
+        y_values = []
+
+        # Durch die Koordinaten iterieren und in Listen speichern
+        for coord in coordinates:
+            x_values.append(float(coord[0]))  # X-Wert (Zeitpunkt)
+            y_values.append(float(coord[1]))  # Y-Wert (Preis)
+
+        # Überprüfen, ob überhaupt Werte extrahiert wurden
+        if not x_values or not y_values:
+            print("Fehler: Keine Koordinaten gefunden.")
+            return []  # Leere Liste zurückgeben, falls keine Koordinaten gefunden wurden
+
+        # Optional: Den extrahierten Preis in der Konsole ausgeben
+        print(f"X-Werte (Zeitpunkte): {x_values}")
+        print(f"Y-Werte (Preise): {y_values}")
+
+        adjusted_values = [3500 - y for y in y_values]
+
+        return y_values  # Nur die Y-Werte (Preise) zurückgeben
+
+    def convert_prices(self,prices):
+        # Entfernen des "€"-Symbols und des Tausendertrennzeichens, dann Umwandlung in Fließkommazahlen
+        return [float(price.replace(' €', '').replace('.', '').replace(',', '.')) for price in prices]
+
+    def GetReferenceValue(self):
+        try:
+            # Finde das Element für die Y-Achse
+            y_axis = self.driver.find_element(By.CSS_SELECTOR, '.y-axis')
+
+            # Extrahiere alle "tick"-Elemente, die die Skalierung der Y-Achse repräsentieren
+            ticks = y_axis.find_elements(By.CSS_SELECTOR, '.tick')
+
+            # Holen wir uns den maximalen Y-Wert aus den Texten der "tick"-Elemente
+            y_values = []
+            for tick in ticks:
+                # Extrahiere den Text (der den Preis darstellen sollte)
+                text = tick.text.strip()
+                if text:  # Wenn der Text vorhanden ist
+                    y_values.append(float(text.replace(',', '.')))  # Um sicherzustellen, dass es eine Zahl ist
+
+            # Berechne den höchsten Y-Wert (der als Referenzwert dient)
+            max_y_value = max(y_values) if y_values else None
+
+            if max_y_value:
+                print(f"Der dynamisch extrahierte Referenzwert ist: {max_y_value}")
+                return max_y_value
+            else:
+                print("Fehler: Kein maximaler Y-Wert gefunden.")
+                return None
+        except Exception as e:
+            print(f"Fehler beim Extrahieren des Referenzwertes: {e}")
+            return None
+
+    def Draw(self,prices):
+        # Erstelle x-Werte (Index der Preise)
+        x = list(range(len(prices)))
+
+        # Erstelle den Graphen
+        fig = go.Figure(data=go.Scatter(x=x, y=prices, mode='lines+markers', name='Preise'))
+
+        # Titel und Achsenbeschriftungen hinzufügen
+        fig.update_layout(title="Preisentwicklung",
+                          xaxis_title="Zeitpunkte",
+                          yaxis_title="Preis (€)",
+                          template="plotly_dark")
+
+        # Zeige den Graphen an
+        fig.show()
+
+    # Aufruf der Funktion zum Zeichnen des Graphen
 
     #Logging in to TradeRepublic
     def Login(self):
@@ -109,7 +199,14 @@ class TradeRepublic:
         self.HandleCookies()
         self.EnterPhoneNumber()
         self.EnterPin()
+        time.sleep(5)
+
+        data = self.GetData()
+        self.Draw(data)
+
+        #print("maxValue = ".  max(data))
         time.sleep(2000)
+
 
 
 
