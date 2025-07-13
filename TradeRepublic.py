@@ -103,7 +103,7 @@ class TradeRepublic:
         except Exception as e:
             print(f"Fehler beim Eingeben der PIN: {e}")
 
-    def GetData(self):
+    def GetData(self,reference):
         # Warten, bis das Diagramm geladen ist
         try:
             chart = self.driver.find_element(By.ID, 'mainChart')  # Das SVG-Element
@@ -137,7 +137,7 @@ class TradeRepublic:
         print(f"X-Werte (Zeitpunkte): {x_values}")
         print(f"Y-Werte (Preise): {y_values}")
 
-        adjusted_values = [3500 - y for y in y_values]
+        adjusted_values = [reference - y for y in y_values]
 
         return y_values  # Nur die Y-Werte (Preise) zurückgeben
 
@@ -147,31 +147,44 @@ class TradeRepublic:
 
     def GetReferenceValue(self):
         try:
-            # Finde das Element für die Y-Achse
-            y_axis = self.driver.find_element(By.CSS_SELECTOR, '.y-axis')
+            reference_value = self.driver.find_element(By.CSS_SELECTOR,
+                                                       "#root > g:nth-child(1) > g.reference-value > g > text")
+            # Extrahiere den Text des Referenzwertes
+            value = reference_value.text.strip()
+            value = value.replace('.', '').replace(',', '.')
+            value = float(value)
 
-            # Extrahiere alle "tick"-Elemente, die die Skalierung der Y-Achse repräsentieren
-            ticks = y_axis.find_elements(By.CSS_SELECTOR, '.tick')
-
-            # Holen wir uns den maximalen Y-Wert aus den Texten der "tick"-Elemente
-            y_values = []
-            for tick in ticks:
-                # Extrahiere den Text (der den Preis darstellen sollte)
-                text = tick.text.strip()
-                if text:  # Wenn der Text vorhanden ist
-                    y_values.append(float(text.replace(',', '.')))  # Um sicherzustellen, dass es eine Zahl ist
-
-            # Berechne den höchsten Y-Wert (der als Referenzwert dient)
-            max_y_value = max(y_values) if y_values else None
-
-            if max_y_value:
-                print(f"Der dynamisch extrahierte Referenzwert ist: {max_y_value}")
-                return max_y_value
+            if value:
+                print(f"Gefundener Referenzwert: {value}")
             else:
-                print("Fehler: Kein maximaler Y-Wert gefunden.")
-                return None
+                print("Kein Referenzwert gefunden.")
+
+            return value
+
         except Exception as e:
-            print(f"Fehler beim Extrahieren des Referenzwertes: {e}")
+            print(f"Fehler beim Extrahieren des Referenzwerts: {e}")
+            return None
+
+    def GetMaxPrice(self,child):
+        try:
+            reference_value = self.driver.find_element(By.CSS_SELECTOR,
+                                                       f"#root > g:nth-child(1) > g.y-axis > g:nth-child({child}) > text")
+            # Extrahiere den Text des Referenzwertes
+            value = reference_value.text.strip()
+            value = value.replace('.', '').replace(',', '.')
+            value = float(value)
+
+            if value:
+                print(f"Gefundener MaxWert: {value}")
+            else:
+                print("Kein MaxWert gefunden.")
+
+            return value
+
+        except Exception as e:
+            print(f"Fehler beim Extrahieren des Maxwerts bei child({child})")
+            if(child != 0):
+                self.GetMaxPrice(child-1)
             return None
 
     def Draw(self,prices):
@@ -200,13 +213,25 @@ class TradeRepublic:
         self.EnterPhoneNumber()
         self.EnterPin()
         time.sleep(5)
+        self.GetDataFromURI('https://app.traderepublic.com/instrument/DE0007030009?timeframe=1d')
 
-        data = self.GetData()
-        self.Draw(data)
+        max = self.GetMaxPrice(9)
+        ref = self.GetReferenceValue()
+        #print(f'Delta = {max-ref}')
+        #data = self.GetData()
+        #self.Draw(data)
 
         #print("maxValue = ".  max(data))
         time.sleep(2000)
 
+    def GetDataFromURI(self,url):
+        print('Daten lesen von URL gestartet')
+        currentURI = url
+        self.driver.get(currentURI)
+        time.sleep(1)
+        reference = self.GetReferenceValue()
+        self.Draw(self.GetData(reference))
 
+        print('Daten lesen von URL beendet')
 
 
