@@ -139,11 +139,21 @@ class TradeRepublic:
 
         adjusted_values = [reference - y for y in y_values]
 
-        return y_values  # Nur die Y-Werte (Preise) zurückgeben
+        prices = self.convert_prices(y_values)
+
+        return prices  # Nur die Y-Werte (Preise) zurückgeben
 
     def convert_prices(self,prices):
-        # Entfernen des "€"-Symbols und des Tausendertrennzeichens, dann Umwandlung in Fließkommazahlen
-        return [float(price.replace(' €', '').replace('.', '').replace(',', '.')) for price in prices]
+        print('start converting prices')
+        maxVal = self.GetMaxPrice(9)
+        calcFactor = self.calcFactor()
+
+
+        converted_prices = [maxVal - (price*calcFactor) for price in prices]
+
+        print(converted_prices)
+        print('end converting prices')
+        return converted_prices
 
     def GetReferenceValue(self):
         try:
@@ -159,7 +169,7 @@ class TradeRepublic:
             else:
                 print("Kein Referenzwert gefunden.")
 
-            return value
+            return float(value)
 
         except Exception as e:
             print(f"Fehler beim Extrahieren des Referenzwerts: {e}")
@@ -179,13 +189,40 @@ class TradeRepublic:
             else:
                 print("Kein MaxWert gefunden.")
 
-            return value
+            return float(value)
 
         except Exception as e:
             print(f"Fehler beim Extrahieren des Maxwerts bei child({child})")
             if(child != 0):
-                self.GetMaxPrice(child-1)
+                return self.GetMaxPrice(child-1)
+    def GetRefPx(self):
+        try:
+            element = self.driver.find_element(By.CSS_SELECTOR,
+                                                       "#root > g:nth-child(1) > g.reference-value > g")
+            transform_value = element.get_attribute("transform")
+
+            if "translate" in transform_value:
+                # Extrahieren des Y-Werts
+                translate_part = transform_value.split("translate(")[1]  # Alles nach "translate("
+                y_value = translate_part.split(",")[1].split(")")[0]  # Den Y-Wert nach dem Komma und vor der Klammer
+                print(f"Extrahierter Y-Wert: {y_value}")
+                return float(y_value)
+            else:
+                print("Das transform-Attribut enthält keinen 'translate'-Wert.")
+
+
+        except Exception as e:
+            print(f"Fehler beim Extrahieren des RefPx")
             return None
+
+
+    ###Calculates the CashPerPixel needed for later calc in self.GetData Method
+    def calcFactor(self):
+        max = float(self.GetMaxPrice(9))
+        ref = float(self.GetReferenceValue())
+        refPX = float(self.GetRefPx())
+
+        return (max-ref)/refPX
 
     def Draw(self,prices):
         # Erstelle x-Werte (Index der Preise)
@@ -212,16 +249,8 @@ class TradeRepublic:
         self.HandleCookies()
         self.EnterPhoneNumber()
         self.EnterPin()
-        time.sleep(5)
+        time.sleep(7)
         self.GetDataFromURI('https://app.traderepublic.com/instrument/DE0007030009?timeframe=1d')
-
-        max = self.GetMaxPrice(9)
-        ref = self.GetReferenceValue()
-        #print(f'Delta = {max-ref}')
-        #data = self.GetData()
-        #self.Draw(data)
-
-        #print("maxValue = ".  max(data))
         time.sleep(2000)
 
     def GetDataFromURI(self,url):
