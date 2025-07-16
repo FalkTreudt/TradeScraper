@@ -7,12 +7,14 @@ from selenium.webdriver.support import expected_conditions as EC
 import time
 import re
 import plotly.graph_objects as go
+from Clock import Clock
 
 class TradeRepublic:
 
     def __init__(self, driver):
         self.driver = driver
         self.url = 'https://app.traderepublic.com/login'
+        self.clock = Clock()
 
     def HandleWebDriverSignature(self):
         # Manipulation von JavaScript, um "navigator.webdriver" zu falsifizieren
@@ -140,13 +142,12 @@ class TradeRepublic:
             return []  # Leere Liste zurückgeben, falls keine Koordinaten gefunden wurden
 
         # Optional: Den extrahierten Preis in der Konsole ausgeben
-        print(f"X-Werte (Zeitpunkte): {x_values}")
-        print(f"Y-Werte (Preise): {y_values}")
+
 
         adjusted_values = [reference - y for y in y_values]
 
         prices = self.convert_prices(y_values)
-
+        self.prices = prices
         return prices  # Nur die Y-Werte (Preise) zurückgeben
 
     def convert_prices(self,prices):
@@ -160,6 +161,15 @@ class TradeRepublic:
         print(converted_prices)
         print('end converting prices')
         return converted_prices
+
+    def GetDailyTimes(self,prices):
+        print("Starting Dailytimes")
+        times = []
+        for i in range(len(prices)):
+            times.append(self.clock.GetTime())
+            self.clock.increaseMinutes(10)
+        return times
+
 
     def GetReferenceValue(self):
         try:
@@ -221,23 +231,6 @@ class TradeRepublic:
             print(f"Fehler beim Extrahieren des RefPx")
             return None
 
-    def GetTimes(self):
-        try:
-            print("Starte Zeit Auslese")
-            element = self.driver.find_element(By.CSS_SELECTOR,
-                                               "#root > g:nth-child(1) > g.x-axis > g:nth-child(2)")
-            transform_value = element.get_attribute("transform")
-            if "translate" in transform_value:
-                translate_part = transform_value.split("translate(")[1]  # Alles nach "translate("
-                y_value = translate_part.split(",")[0].split(")")[0]  # Den Y-Wert nach dem Komma und vor der Klammer
-                return float(y_value)
-            else:
-                print("Das transform-Attribut enthält keinen 'translate'-Wert.")
-
-
-        except Exception as e:
-            print(f"Fehler beim Extrahieren des Zeitstempels: {e}")
-            return None
 
 
     ###Calculates the CashPerPixel needed for later calc in self.GetPrices Method
@@ -274,9 +267,9 @@ class TradeRepublic:
         self.EnterPhoneNumber()
         self.EnterPin()
 
-        self.GetDataFromURI('https://app.traderepublic.com/instrument/DE0007030009?timeframe=1d')
-        self.GetTimes()
-        time.sleep(2000)
+        #self.GetDataFromURI('https://app.traderepublic.com/instrument/DE0007030009?timeframe=1d')
+        #self.GetTimes(1)
+        time.sleep(1)
 
     def GetDataFromURI(self,url):
         print('Daten lesen von URL gestartet')
@@ -285,7 +278,8 @@ class TradeRepublic:
         time.sleep(1)
         reference = self.GetReferenceValue()
         self.Draw(self.GetPrices(reference))
-
-        print('Daten lesen von URL beendet')
+        prices = self.GetPrices(reference)
+        print(f'Daten lesen von URL beendet: {prices}')
+        return prices
 
 

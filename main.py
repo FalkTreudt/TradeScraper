@@ -6,6 +6,7 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.keys import Keys
 import time
 from TradeRepublic import TradeRepublic
+from Day import Day
 
 
 
@@ -25,6 +26,10 @@ driver = webdriver.Edge(service=service, options=options)
 
 trade_republic = TradeRepublic(driver)
 trade_republic.Login()
+
+day1 = Day("RheinMetall",'https://app.traderepublic.com/instrument/DE0007030009?timeframe=1d',trade_republic)
+day1.GetDay()
+
 
 # Warten, um sicherzustellen, dass die Seite geladen wird
 time.sleep(3)
