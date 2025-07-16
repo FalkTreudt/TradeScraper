@@ -98,12 +98,18 @@ class TradeRepublic:
                 pin_field.send_keys(pin_values[i])
                 time.sleep(0.1)  # Verzögerung für realistischere Eingabe
 
+            while True:
+                if self.driver.current_url != 'https://app.traderepublic.com/login':
+                    break
+                time.sleep(1)
+
+
             print("PIN wurde erfolgreich eingegeben!")
 
         except Exception as e:
             print(f"Fehler beim Eingeben der PIN: {e}")
 
-    def GetData(self,reference):
+    def GetPrices(self,reference):
         # Warten, bis das Diagramm geladen ist
         try:
             chart = self.driver.find_element(By.ID, 'mainChart')  # Das SVG-Element
@@ -215,8 +221,26 @@ class TradeRepublic:
             print(f"Fehler beim Extrahieren des RefPx")
             return None
 
+    def GetTimes(self):
+        try:
+            print("Starte Zeit Auslese")
+            element = self.driver.find_element(By.CSS_SELECTOR,
+                                               "#root > g:nth-child(1) > g.x-axis > g:nth-child(2)")
+            transform_value = element.get_attribute("transform")
+            if "translate" in transform_value:
+                translate_part = transform_value.split("translate(")[1]  # Alles nach "translate("
+                y_value = translate_part.split(",")[0].split(")")[0]  # Den Y-Wert nach dem Komma und vor der Klammer
+                return float(y_value)
+            else:
+                print("Das transform-Attribut enthält keinen 'translate'-Wert.")
 
-    ###Calculates the CashPerPixel needed for later calc in self.GetData Method
+
+        except Exception as e:
+            print(f"Fehler beim Extrahieren des Zeitstempels: {e}")
+            return None
+
+
+    ###Calculates the CashPerPixel needed for later calc in self.GetPrices Method
     def calcFactor(self):
         max = float(self.GetMaxPrice(9))
         ref = float(self.GetReferenceValue())
@@ -249,8 +273,9 @@ class TradeRepublic:
         self.HandleCookies()
         self.EnterPhoneNumber()
         self.EnterPin()
-        time.sleep(7)
+
         self.GetDataFromURI('https://app.traderepublic.com/instrument/DE0007030009?timeframe=1d')
+        self.GetTimes()
         time.sleep(2000)
 
     def GetDataFromURI(self,url):
@@ -259,7 +284,7 @@ class TradeRepublic:
         self.driver.get(currentURI)
         time.sleep(1)
         reference = self.GetReferenceValue()
-        self.Draw(self.GetData(reference))
+        self.Draw(self.GetPrices(reference))
 
         print('Daten lesen von URL beendet')
 
