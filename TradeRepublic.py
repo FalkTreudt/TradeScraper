@@ -7,12 +7,14 @@ from selenium.webdriver.support import expected_conditions as EC
 import time
 import re
 import plotly.graph_objects as go
+from Clock import Clock
 
 class TradeRepublic:
 
     def __init__(self, driver):
         self.driver = driver
         self.url = 'https://app.traderepublic.com/login'
+        self.clock = Clock()
 
     def HandleWebDriverSignature(self):
         # Manipulation von JavaScript, um "navigator.webdriver" zu falsifizieren
@@ -98,12 +100,18 @@ class TradeRepublic:
                 pin_field.send_keys(pin_values[i])
                 time.sleep(0.1)  # Verzögerung für realistischere Eingabe
 
+            while True:
+                if self.driver.current_url != 'https://app.traderepublic.com/login':
+                    break
+                time.sleep(1)
+
+
             print("PIN wurde erfolgreich eingegeben!")
 
         except Exception as e:
             print(f"Fehler beim Eingeben der PIN: {e}")
 
-    def GetData(self,reference):
+    def GetPrices(self,reference):
         # Warten, bis das Diagramm geladen ist
         try:
             chart = self.driver.find_element(By.ID, 'mainChart')  # Das SVG-Element
@@ -134,13 +142,12 @@ class TradeRepublic:
             return []  # Leere Liste zurückgeben, falls keine Koordinaten gefunden wurden
 
         # Optional: Den extrahierten Preis in der Konsole ausgeben
-        print(f"X-Werte (Zeitpunkte): {x_values}")
-        print(f"Y-Werte (Preise): {y_values}")
+
 
         adjusted_values = [reference - y for y in y_values]
 
         prices = self.convert_prices(y_values)
-
+        self.prices = prices
         return prices  # Nur die Y-Werte (Preise) zurückgeben
 
     def convert_prices(self,prices):
@@ -154,6 +161,15 @@ class TradeRepublic:
         print(converted_prices)
         print('end converting prices')
         return converted_prices
+
+    def GetDailyTimes(self,prices):
+        print("Starting Dailytimes")
+        times = []
+        for i in range(len(prices)):
+            times.append(self.clock.GetTime())
+            self.clock.increaseMinutes(10)
+        return times
+
 
     def GetReferenceValue(self):
         try:
@@ -216,7 +232,8 @@ class TradeRepublic:
             return None
 
 
-    ###Calculates the CashPerPixel needed for later calc in self.GetData Method
+
+    ###Calculates the CashPerPixel needed for later calc in self.GetPrices Method
     def calcFactor(self):
         max = float(self.GetMaxPrice(9))
         ref = float(self.GetReferenceValue())
@@ -224,12 +241,8 @@ class TradeRepublic:
 
         return (max-ref)/refPX
 
-    def Draw(self,prices):
-        # Erstelle x-Werte (Index der Preise)
-        x = list(range(len(prices)))
-
-        # Erstelle den Graphen
-        fig = go.Figure(data=go.Scatter(x=x, y=prices, mode='lines+markers', name='Preise'))
+    def Draw(self,prices,times):
+        fig = go.Figure(data=go.Scatter(x=times, y=prices, mode='lines+markers', name='Preise'))
 
         # Titel und Achsenbeschriftungen hinzufügen
         fig.update_layout(title="Preisentwicklung",
@@ -249,9 +262,10 @@ class TradeRepublic:
         self.HandleCookies()
         self.EnterPhoneNumber()
         self.EnterPin()
-        time.sleep(7)
-        self.GetDataFromURI('https://app.traderepublic.com/instrument/DE0007030009?timeframe=1d')
-        time.sleep(2000)
+
+        #self.GetDataFromURI('https://app.traderepublic.com/instrument/DE0007030009?timeframe=1d')
+        #self.GetTimes(1)
+        time.sleep(1)
 
     def GetDataFromURI(self,url):
         print('Daten lesen von URL gestartet')
@@ -259,8 +273,8 @@ class TradeRepublic:
         self.driver.get(currentURI)
         time.sleep(1)
         reference = self.GetReferenceValue()
-        self.Draw(self.GetData(reference))
-
-        print('Daten lesen von URL beendet')
+        prices = self.GetPrices(reference)
+        print(f'Daten lesen von URL beendet: {prices}')
+        return prices
 
 
