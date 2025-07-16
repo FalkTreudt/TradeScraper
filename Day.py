@@ -17,5 +17,7 @@ class Day:
         #print(f"Preise: {self.prices} Länge: {len(self.times)}")
         #print(f"Zeiten: {self.times} Länge: {len(self.times)}")
 
-        print(f"Preise: {self.prices}")
-        print(f"Zeiten: {self.times}")
+        print(f"Preise: {len(self.prices)}")
+        print(f"Zeiten: {len(self.times)}")
+    def DrawDay(self):
+        self.tradeRepublic.Draw(self.prices,self.times)

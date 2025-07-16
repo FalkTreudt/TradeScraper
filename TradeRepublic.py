@@ -241,12 +241,8 @@ class TradeRepublic:
 
         return (max-ref)/refPX
 
-    def Draw(self,prices):
-        # Erstelle x-Werte (Index der Preise)
-        x = list(range(len(prices)))
-
-        # Erstelle den Graphen
-        fig = go.Figure(data=go.Scatter(x=x, y=prices, mode='lines+markers', name='Preise'))
+    def Draw(self,prices,times):
+        fig = go.Figure(data=go.Scatter(x=times, y=prices, mode='lines+markers', name='Preise'))
 
         # Titel und Achsenbeschriftungen hinzufügen
         fig.update_layout(title="Preisentwicklung",
@@ -277,7 +273,6 @@ class TradeRepublic:
         self.driver.get(currentURI)
         time.sleep(1)
         reference = self.GetReferenceValue()
-        self.Draw(self.GetPrices(reference))
         prices = self.GetPrices(reference)
         print(f'Daten lesen von URL beendet: {prices}')
         return prices

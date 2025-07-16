@@ -1,6 +1,6 @@
 class Clock:
     def __init__(self):
-        self.min = 30
+        self.min = 40
         self.hours = 7
 
     def increaseMinutes(self,min):
