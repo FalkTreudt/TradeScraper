@@ -28,43 +28,60 @@ class DBConnector:
 
 
     def PushDay(self,Day):
+        print('Lade Daten hoch')
         current_date = datetime.now()
         formatted_date = current_date.strftime('%Y-%m-%d')
-
-        for i in range(len(Day.prices)):
-            #print(f"INSERT INTO Preise VALUES ({Day.Aktie_ID}, '{Day.prices[i]}','{formatted_date}','{Day.times[i]}')")
-            self.cursor.execute(f"INSERT INTO Preise VALUES ('{Day.Aktie_ID}', '{Day.times[i]}','{formatted_date}','{Day.prices[i]}')")
-            self.connection.commit()
+        try:
+            for i in range(len(Day.prices)):
+                self.cursor.execute(f"INSERT INTO Preise VALUES ('{Day.Aktie_ID}', '{Day.times[i]}','{formatted_date}','{Day.prices[i]}')")
+                self.connection.commit()
+        except mysql.connector.Error as err:
+            print(f"Fehler beim Hochladen der Daten: {err}")
 
     def GetPricesByID(self,ID):
-        self.cursor.execute(f"SELECT * FROM Preise WHERE Aktie_ID = {ID}")
-        result = self.cursor.fetchall()
-        for row in result:
-            print(row)
+        print(f'Start loading prices of ID {ID}')
+        try:
+            self.cursor.execute(f"SELECT * FROM Preise WHERE Aktie_ID = {ID}")
+            result = self.cursor.fetchall()
+            for row in result:
+               print(row)
+        except mysql.connector.Error as err:
+            print(f"Fehler beim Laden der Daten von ID {ID}: {err}")
 
     def GetNewID(self):
-        self.cursor.execute("SELECT MAX(Aktie_ID) FROM Aktien")
-        result = self.cursor.fetchall()
-        for row in result:
-            print(f"Neue ID = {row[0]}")
-            return row[0]
+        print('Start Check next ID')
+        try:
+            self.cursor.execute("SELECT MAX(Aktie_ID) FROM Aktien")
+            result = self.cursor.fetchall()
+            for row in result:
+                print(f"Neue ID = {row[0]}")
+                return row[0]
+        except mysql.connector.Error as err:
+            print(f"Fehler beim Checken der ID: {err}")
 
     def CheckEntry(self,name):
-        self.cursor.execute(f"SELECT * FROM Aktien WHERE name = '{name}'" )
-        result = self.cursor.fetchall()
-        if len(result) == 0:
-            return False
-        else:
-            return True
+        print(f'Start Checking for {name}')
+        try:
+            self.cursor.execute(f"SELECT * FROM Aktien WHERE name = '{name}'")
+            result = self.cursor.fetchall()
+            if len(result) == 0:
+                return False
+            else:
+                return True
+        except mysql.connector.Error as err:
+            print(f"Fehler beim Checken der Aktie: {err}")
 
     def CreateEntry(self, name, category):
-        if self.CheckEntry(name)==False:
-            self.cursor.execute(
-                f"INSERT INTO Aktien VALUES ('{self.GetNewID() + 1}', '{name}','{category}','')")
-            self.connection.commit()
-            print(f"Eintrag für die Aktie {name} erstellt")
-        else:
-            print(f"Eintrag für die Aktie {name} bereits vorhanden!")
+        try:
+            if self.CheckEntry(name) == False:
+                self.cursor.execute(
+                    f"INSERT INTO Aktien VALUES ('{self.GetNewID() + 1}', '{name}','{category}','')")
+                self.connection.commit()
+                print(f"Eintrag für die Aktie {name} erstellt")
+            else:
+                print(f"Eintrag für die Aktie {name} bereits vorhanden!")
+        except mysql.connector.Error as err:
+            print(f"Fehler beim Erstellen der Aktie: {err}")
 
 
     def closeConnection(self):
