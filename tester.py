@@ -1,8 +1,9 @@
 from Clock import Clock
+from DBConnector import DBConnector
 
-testclock = Clock()
+connector = DBConnector()
+connector.Startconnection()
+#connector.PushDay()
+connector.GetNewID()
 
-
-for i in range(4):
-    testclock.increaseMinutes(10)
-print(testclock.GetTime())
+connector.closeConnection()

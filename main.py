@@ -30,6 +30,7 @@ trade_republic.Login()
 day1 = Day("RheinMetall",'https://app.traderepublic.com/instrument/DE0007030009?timeframe=1d',trade_republic)
 day1.GetDay()
 day1.DrawDay()
+day1.PushData()
 
 
 # Warten, um sicherzustellen, dass die Seite geladen wird
