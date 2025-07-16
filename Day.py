@@ -18,6 +18,7 @@ class Day:
     def DrawDay(self):
         if len(self.prices) == len(self.times):
             self.tradeRepublic.Draw(self.prices,self.times)
+
     def PushData(self):
         if len(self.prices) == len(self.times):
             connector = DBConnector()

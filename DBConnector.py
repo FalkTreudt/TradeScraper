@@ -47,6 +47,25 @@ class DBConnector:
         result = self.cursor.fetchall()
         for row in result:
             print(f"Neue ID = {row[0]}")
+            return row[0]
+
+    def CheckEntry(self,name):
+        self.cursor.execute(f"SELECT * FROM Aktien WHERE name = '{name}'" )
+        result = self.cursor.fetchall()
+        if len(result) == 0:
+            return False
+        else:
+            return True
+
+    def CreateEntry(self, name, category):
+        if self.CheckEntry(name)==False:
+            self.cursor.execute(
+                f"INSERT INTO Aktien VALUES ('{self.GetNewID() + 1}', '{name}','{category}','')")
+            self.connection.commit()
+            print(f"Eintrag für die Aktie {name} erstellt")
+        else:
+            print(f"Eintrag für die Aktie {name} bereits vorhanden!")
+
 
     def closeConnection(self):
         self.connection.close()
