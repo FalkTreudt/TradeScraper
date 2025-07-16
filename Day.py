@@ -23,6 +23,6 @@ class Day:
         if len(self.prices) == len(self.times):
             connector = DBConnector()
             connector.Startconnection()
-            #connector.PushDay(self)
+            connector.PushDay(self)
             connector.GetNewID()
             connector.closeConnection()

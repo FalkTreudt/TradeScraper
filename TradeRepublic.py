@@ -276,5 +276,43 @@ class TradeRepublic:
         prices = self.GetPrices(reference)
         print(f'Daten lesen von URL beendet: {prices}')
         return prices
+    def GetProducts(self):
+        self.driver.get('https://app.traderepublic.com/browse/stock')
+
+        stocks = []  # Liste zum Speichern der extrahierten Informationen
+
+        last_height = self.driver.execute_script("return document.body.scrollHeight")  # Die aktuelle Höhe der Seite
+
+        for i in range(10):
+            # Finde alle Zeilen in der Tabelle, die Aktieninformationen enthalten
+            rows = self.driver.find_elements(By.CSS_SELECTOR, 'tr.tableRow')
+
+            # Extrahiere Namen und URLs der Aktien
+            for row in rows:
+                try:
+                    name_element = row.find_element(By.CSS_SELECTOR, '.instrumentResult__name')
+                    name = name_element.text.strip()
+
+                    url_element = row.find_element(By.CSS_SELECTOR, '.instrumentIcon img')
+                    logo_url = url_element.get_attribute('src')
+
+                    stocks.append({
+                        'name': name,
+                        'logo_url': logo_url
+                    })
+                except Exception as e:
+                    print(f"Fehler beim Extrahieren der Daten für eine Zeile: {e}")
+
+            # Scrollen bis zum Ende der Seite
+            self.driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
+            time.sleep(1)
+            # Überprüfe, ob wir das Ende der Seite erreicht haben
+            new_height = self.driver.execute_script("return document.body.scrollHeight")
+            if new_height == last_height:
+                break  # Wenn die Höhe der Seite nicht mehr wächst, haben wir das Ende erreicht
+
+            last_height = new_height  # Setze die neue Höhe der Seite als die letzte Höhe
+
+        return stocks
 
 

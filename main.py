@@ -26,15 +26,19 @@ driver = webdriver.Edge(service=service, options=options)
 
 trade_republic = TradeRepublic(driver)
 trade_republic.Login()
+print(trade_republic.GetProducts())
+
+#Link for All Products in TradeRepublic: https://app.traderepublic.com/browse/stock
+
 
 day1 = Day("RheinMetall",'https://app.traderepublic.com/instrument/DE0007030009?timeframe=1d',trade_republic)
 day1.GetDay()
 day1.DrawDay()
-day1.PushData()
+
 
 
 # Warten, um sicherzustellen, dass die Seite geladen wird
-time.sleep(300)
+time.sleep(3000)
 
 # Beispiel: Suche ein HTML-Element und interagiere damit (z.B. Eingabefeld)
 #input_element = driver.find_element(By.NAME, "q")  # Beispiel: Ein Sucheingabefeld mit dem Namen "q"
