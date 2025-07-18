@@ -47,6 +47,20 @@ class DBConnector:
                print(row)
         except mysql.connector.Error as err:
             print(f"Fehler beim Laden der Daten von ID {ID}: {err}")
+    def GetCurrentDataFromID(self,ID):
+        try:
+            self.cursor.execute(f"SELECT preis, zeit FROM Preise WHERE Aktie_ID = {ID}")
+            result = self.cursor.fetchall()
+            prices = []
+            times = []
+            for row in result:
+                prices.append(row[0])
+                times.append(row[1])
+
+            return [prices,times]
+
+        except mysql.connector.Error as err:
+            print(f"Fehler beim Laden der Daten von ID {ID}: {err}")
 
     def GetNewID(self):
         print('Start Check next ID')
@@ -54,8 +68,10 @@ class DBConnector:
             self.cursor.execute("SELECT MAX(Aktie_ID) FROM Aktien")
             result = self.cursor.fetchall()
             for row in result:
-                print(f"Neue ID = {row[0]}")
-                return row[0]
+                if row[0] != None:
+                    return float(row[0])
+                else:
+                    return 0
         except mysql.connector.Error as err:
             print(f"Fehler beim Checken der ID: {err}")
 
@@ -71,11 +87,12 @@ class DBConnector:
         except mysql.connector.Error as err:
             print(f"Fehler beim Checken der Aktie: {err}")
 
-    def CreateEntry(self, name, category):
+    def CreateEntry(self, name, URL):
+        print(f'Start creating Entry for {name}')
         try:
             if self.CheckEntry(name) == False:
                 self.cursor.execute(
-                    f"INSERT INTO Aktien VALUES ('{self.GetNewID() + 1}', '{name}','{category}','')")
+                    f"INSERT INTO Aktien VALUES ('{self.GetNewID() + 1}', '{name}','{URL}','')")
                 self.connection.commit()
                 print(f"Eintrag für die Aktie {name} erstellt")
             else:
@@ -84,5 +101,44 @@ class DBConnector:
             print(f"Fehler beim Erstellen der Aktie: {err}")
 
 
+    def PushProducts(self,names,urls):
+        print('Start pushing Products')
+        if len(names) == len(urls):
+            try:
+                for i in range(len(names)):
+                    self.CreateEntry(names[i],urls[i])
+            except mysql.connector.Error as err:
+                print(f"Fehler beim Pushen der Aktien: {err}")
+
+
+    def GetProducts(self):
+        print('Start getting URLS')
+        try:
+            self.cursor.execute("SELECT Aktie_ID,Name,URL FROM Aktien")
+            result = self.cursor.fetchall()
+            urls = []
+            names = []
+            IDs = []
+            for row in result:
+                IDs.append(row[0])
+                names.append(row[1])
+                urls.append(row[2])
+
+            data = [IDs,names,urls]
+            return data
+        except mysql.connector.Error as err:
+            print(f"Fehler beim Checken der ID: {err}")
+
+    def GetNumberOfProducts(self):
+        print('Start getting Number of Products')
+        try:
+            self.cursor.execute("SELECT COUNT(*) FROM Aktien")
+            result = self.cursor.fetchall()
+            count = result[0][0]
+            return int(count)
+        except mysql.connector.Error as err:
+            print(f"Fehler beim Checken der ID: {err}")
+
     def closeConnection(self):
         self.connection.close()
+

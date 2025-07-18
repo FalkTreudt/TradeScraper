@@ -165,9 +165,10 @@ class TradeRepublic:
     def GetDailyTimes(self,prices):
         print("Starting Dailytimes")
         times = []
+        clock = Clock()
         for i in range(len(prices)):
-            times.append(self.clock.GetTime())
-            self.clock.increaseMinutes(10)
+            times.append(clock.GetTime())
+            clock.increaseMinutes(10)
         return times
 
 
@@ -241,17 +242,7 @@ class TradeRepublic:
 
         return (max-ref)/refPX
 
-    def Draw(self,prices,times):
-        fig = go.Figure(data=go.Scatter(x=times, y=prices, mode='lines+markers', name='Preise'))
 
-        # Titel und Achsenbeschriftungen hinzufügen
-        fig.update_layout(title="Preisentwicklung",
-                          xaxis_title="Zeitpunkte",
-                          yaxis_title="Preis (€)",
-                          template="plotly_dark")
-
-        # Zeige den Graphen an
-        fig.show()
 
     # Aufruf der Funktion zum Zeichnen des Graphen
 
@@ -273,13 +264,20 @@ class TradeRepublic:
         self.driver.get(currentURI)
         time.sleep(1)
         reference = self.GetReferenceValue()
-        prices = self.GetPrices(reference)
+        if reference:
+            prices = self.GetPrices(reference)
+            print(f'Kein Referenzwert bei: {url} gefunden')
+        else:
+            prices=[]
         print(f'Daten lesen von URL beendet: {prices}')
         return prices
+    #def GetAllDailyData(self,day,urls):
+
     def GetProducts(self):
         self.driver.get('https://app.traderepublic.com/browse/stock')
 
-        stocks = []  # Liste zum Speichern der extrahierten Informationen
+        stocksName = []
+        stocksURL = []
 
         last_height = self.driver.execute_script("return document.body.scrollHeight")  # Die aktuelle Höhe der Seite
 
@@ -293,13 +291,13 @@ class TradeRepublic:
                     name_element = row.find_element(By.CSS_SELECTOR, '.instrumentResult__name')
                     name = name_element.text.strip()
 
-                    url_element = row.find_element(By.CSS_SELECTOR, '.instrumentIcon img')
-                    logo_url = url_element.get_attribute('src')
+                    url_element =  row.find_element(By.CSS_SELECTOR, 'span.instrumentResult__details')
+                    logo_url = url_element.get_attribute('innerHTML')
+                    realURL = f'https://app.traderepublic.com/instrument/{logo_url}?timeframe=1d'
+                    print(realURL)
 
-                    stocks.append({
-                        'name': name,
-                        'logo_url': logo_url
-                    })
+                    stocksName.append(name)
+                    stocksURL.append(realURL)
                 except Exception as e:
                     print(f"Fehler beim Extrahieren der Daten für eine Zeile: {e}")
 
@@ -312,7 +310,9 @@ class TradeRepublic:
                 break  # Wenn die Höhe der Seite nicht mehr wächst, haben wir das Ende erreicht
 
             last_height = new_height  # Setze die neue Höhe der Seite als die letzte Höhe
+            resultData = [stocksName,stocksURL]
 
-        return stocks
+
+        return resultData
 
 

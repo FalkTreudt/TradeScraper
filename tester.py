@@ -1,10 +1,16 @@
 from Clock import Clock
 from DBConnector import DBConnector
+from TradeRepublic import TradeRepublic
+from Calculator import Calculator
 
-connector = DBConnector()
-connector.Startconnection()
-#connector.PushDay()
-connector.CreateEntry("NVIDIA",'Grafikkarten')
-print(connector.CheckEntry("Rheinmetall"))
 
-connector.closeConnection()
+calc = Calculator()
+#calc.GetProducts()
+
+con = DBConnector()
+con.Startconnection()
+
+days = calc.GetDaysFromDB()
+
+
+calc.GetBestProducts()

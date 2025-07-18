@@ -7,7 +7,8 @@ from selenium.webdriver.common.keys import Keys
 import time
 from TradeRepublic import TradeRepublic
 from Day import Day
-
+from Engine import Engine
+from DBConnector import DBConnector
 
 
 
@@ -23,17 +24,12 @@ options.add_argument("user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) Apple
 # WebDriver initialisieren
 driver = webdriver.Edge(service=service, options=options)
 
-
-trade_republic = TradeRepublic(driver)
-trade_republic.Login()
-print(trade_republic.GetProducts())
-
 #Link for All Products in TradeRepublic: https://app.traderepublic.com/browse/stock
 
-
-day1 = Day("RheinMetall",'https://app.traderepublic.com/instrument/DE0007030009?timeframe=1d',trade_republic)
-day1.GetDay()
-day1.DrawDay()
+Engine = Engine(driver)
+Engine.start()
+#Engine.PushProducts()
+Engine.GetDays()
 
 
 
