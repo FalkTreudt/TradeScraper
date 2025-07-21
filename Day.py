@@ -14,10 +14,17 @@ class Day:
     def GetDay(self,tradeRepublic):
         self.prices = tradeRepublic.GetDataFromURI(self.URL)
         self.times = tradeRepublic.GetDailyTimes(self.prices)
-    def GetDayFromDB(self,connector):
-        data = connector.GetCurrentDataFromID(self.Aktie_ID)
-        self.prices = [float(x) for x in data[0]]
-        self.times = data[1]
+    def GetDayFromDB(self,index,data):
+        data = data
+        if index in data:
+            self.prices = [float(p) for p in data[index]['preise']]
+            self.times = data[index]['zeiten']
+        else:
+            print(f'index: {index} nicht vorhanden')
+            self.prices =[]
+            self.times =[]
+
+
 
 
     def DrawDay(self):

@@ -10,6 +10,8 @@ class DBConnector:
         self.pw = 'falk'
         self.database = 'TradeScraper'
 
+        self.days = []
+
     def Startconnection(self):
         try:
             self.connection = mysql.connector.connect(
@@ -62,6 +64,24 @@ class DBConnector:
         except mysql.connector.Error as err:
             print(f"Fehler beim Laden der Daten von ID {ID}: {err}")
 
+    def GetCurrentDays(self):
+        try:
+            ids_str = ",".join(str(i) for i in range(self.GetNumberOfProducts()))
+            self.cursor.execute(f"SELECT Aktie_ID, preis, zeit FROM Preise WHERE Aktie_ID IN ({ids_str})")
+            result = self.cursor.fetchall()
+
+        # Dictionary für Zuordnung von ID -> [preise], [zeiten]
+            data = {}
+            for aktie_id, preis, zeit in result:
+             if aktie_id not in data:
+                    data[aktie_id] = {"preise": [], "zeiten": []}
+             data[aktie_id]["preise"].append(preis)
+             data[aktie_id]["zeiten"].append(zeit)
+            self.dayData = data
+            return data  # Dictionary mit allen Daten
+
+        except mysql.connector.Error as err:
+            print(f"Fehler beim Laden der Daten von ID : {err}")
     def GetNewID(self):
         print('Start Check next ID')
         try:
