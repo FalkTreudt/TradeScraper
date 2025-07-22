@@ -7,7 +7,8 @@ from selenium.webdriver.common.keys import Keys
 import time
 from TradeRepublic import TradeRepublic
 from Day import Day
-
+from Engine import Engine
+from DBConnector import DBConnector
 
 
 
@@ -23,25 +24,19 @@ options.add_argument("user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) Apple
 # WebDriver initialisieren
 driver = webdriver.Edge(service=service, options=options)
 
+#Link for All Products in TradeRepublic: https://app.traderepublic.com/browse/stock
 
-trade_republic = TradeRepublic(driver)
-trade_republic.Login()
+Engine = Engine(driver)
+Engine.start()
+#Engine.PushProducts()
+Engine.CollectDayData()
 
-day1 = Day("RheinMetall",'https://app.traderepublic.com/instrument/DE0007030009?timeframe=1d',trade_republic)
-day1.GetDay()
-day1.DrawDay()
 
 
 # Warten, um sicherzustellen, dass die Seite geladen wird
-time.sleep(300)
+time.sleep(3000)
 
-# Beispiel: Suche ein HTML-Element und interagiere damit (z.B. Eingabefeld)
-#input_element = driver.find_element(By.NAME, "q")  # Beispiel: Ein Sucheingabefeld mit dem Namen "q"
-#input_element.send_keys("Selenium")  # Gib 'Selenium' in das Eingabefeld ein
-#input_element.send_keys(Keys.RETURN)  # Drücke Enter
 
-# Warten, damit das Ergebnis geladen wird
 #time.sleep(30)
 
-# Schließe den Browser
 #driver.quit()

@@ -165,9 +165,10 @@ class TradeRepublic:
     def GetDailyTimes(self,prices):
         print("Starting Dailytimes")
         times = []
+        clock = Clock()
         for i in range(len(prices)):
-            times.append(self.clock.GetTime())
-            self.clock.increaseMinutes(10)
+            times.append(clock.GetTime())
+            clock.increaseMinutes(10)
         return times
 
 
@@ -241,21 +242,9 @@ class TradeRepublic:
 
         return (max-ref)/refPX
 
-    def Draw(self,prices,times):
-        fig = go.Figure(data=go.Scatter(x=times, y=prices, mode='lines+markers', name='Preise'))
 
-        # Titel und Achsenbeschriftungen hinzufügen
-        fig.update_layout(title="Preisentwicklung",
-                          xaxis_title="Zeitpunkte",
-                          yaxis_title="Preis (€)",
-                          template="plotly_dark")
 
-        # Zeige den Graphen an
-        fig.show()
 
-    # Aufruf der Funktion zum Zeichnen des Graphen
-
-    #Logging in to TradeRepublic
     def Login(self):
         self.driver.get(self.url)
         self.HandleWebDriverSignature()
@@ -273,8 +262,54 @@ class TradeRepublic:
         self.driver.get(currentURI)
         time.sleep(1)
         reference = self.GetReferenceValue()
-        prices = self.GetPrices(reference)
+        if reference:
+            prices = self.GetPrices(reference)
+            print(f'Kein Referenzwert bei: {url} gefunden')
+        else:
+            prices=[]
         print(f'Daten lesen von URL beendet: {prices}')
         return prices
+
+    def GetProducts(self):
+        self.driver.get('https://app.traderepublic.com/browse/stock')
+
+        stocksName = []
+        stocksURL = []
+
+        last_height = self.driver.execute_script("return document.body.scrollHeight")  # Die aktuelle Höhe der Seite
+
+        for i in range(10):
+            # Finde alle Zeilen in der Tabelle, die Aktieninformationen enthalten
+            rows = self.driver.find_elements(By.CSS_SELECTOR, 'tr.tableRow')
+
+            # Extrahiere Namen und URLs der Aktien
+            for row in rows:
+                try:
+                    name_element = row.find_element(By.CSS_SELECTOR, '.instrumentResult__name')
+                    name = name_element.text.strip()
+
+                    url_element =  row.find_element(By.CSS_SELECTOR, 'span.instrumentResult__details')
+                    logo_url = url_element.get_attribute('innerHTML')
+                    realURL = f'https://app.traderepublic.com/instrument/{logo_url}?timeframe=1d'
+                    print(realURL)
+
+                    stocksName.append(name)
+                    stocksURL.append(realURL)
+                except Exception as e:
+                    print(f"Fehler beim Extrahieren der Daten für eine Zeile: {e}")
+
+            # Scrollen bis zum Ende der Seite
+            self.driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
+            time.sleep(1)
+            # Überprüfe, ob wir das Ende der Seite erreicht haben
+            new_height = self.driver.execute_script("return document.body.scrollHeight")
+            if new_height == last_height:
+                break  # Wenn die Höhe der Seite nicht mehr wächst, haben wir das Ende erreicht
+
+            last_height = new_height  # Setze die neue Höhe der Seite als die letzte Höhe
+            resultData = [stocksName,stocksURL]
+
+        print("--------Finished collecting products-------")
+        return resultData
 
 
