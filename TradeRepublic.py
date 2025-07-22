@@ -150,6 +150,7 @@ class TradeRepublic:
         self.prices = prices
         return prices  # Nur die Y-Werte (Preise) zurückgeben
 
+
     def convert_prices(self,prices):
         print('start converting prices')
         maxVal = self.GetMaxPrice(9)
@@ -290,8 +291,7 @@ class TradeRepublic:
 
                     url_element =  row.find_element(By.CSS_SELECTOR, 'span.instrumentResult__details')
                     logo_url = url_element.get_attribute('innerHTML')
-                    realURL = f'https://app.traderepublic.com/instrument/{logo_url}?timeframe=1d'
-                    print(realURL)
+                    realURL = f'https://app.traderepublic.com/instrument/{logo_url}?timeframe='
 
                     stocksName.append(name)
                     stocksURL.append(realURL)

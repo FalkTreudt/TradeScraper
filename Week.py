@@ -3,20 +3,20 @@ from DBConnector import DBConnector
 import plotly.graph_objects as go
 from datetime import datetime
 
-class Day:
+class Week:
     def __init__(self, ID, name,URL):
         self.prices = []
         self.times = []
         self.name = name
-        self.URL = URL + "1d"
+        self.URL = URL + "5d"
         self.Aktie_ID = self.GetProductID(name)
         self.slope = 0
 
 
-    def GetDay(self,tradeRepublic):
+    def GetWeek(self,tradeRepublic):
         self.prices = tradeRepublic.GetDataFromURI(self.URL)
         self.times = tradeRepublic.GetDailyTimes(self.prices)
-    def GetDayFromDB(self,index,data):
+    def GetWeekFromDB(self,index,data):
         data = data
         if index in data:
             self.prices = [float(p) for p in data[index]['preise']]
@@ -29,7 +29,7 @@ class Day:
 
 
 
-    def DrawDay(self):
+    def DrawWeek(self):
         if len(self.prices) == len(self.times):
             # Berechnung der Regressionslinie mit den Text-Zeitangaben
             times_in_minutes = [self.time_to_minutes(time) for time in self.times]
@@ -106,7 +106,7 @@ class Day:
         if len(self.prices) == len(self.times):
             connector = DBConnector()
             connector.Startconnection()
-            connector.PushDay(self)
+            connector.PushWeek(self)
             #connector.GetNewID()
             connector.closeConnection()
 

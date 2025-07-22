@@ -39,7 +39,6 @@ class Calculator:
         self.slopes = [[],[]]
         self.days = self.GetDaysFromDB()
         days = self.days
-        print(f'day1 {days[52].name} Preise: {days[52].prices}')
 
         for i in range(len(self.days)):
             self.days[i].slope = self.CalcRegression(self.days[i])

@@ -1,5 +1,6 @@
 from TradeRepublic import TradeRepublic
 from Day import Day
+from Week import Week
 from DBConnector import DBConnector
 from Clock import Clock
 import threading
@@ -53,13 +54,24 @@ class Engine:
         print(f'Produkt informationen {productInformation}')
         days = []
         #len(productInformation[0])
-        for i in range(1):
+        for i in range(len(productInformation[0])):
             days.append(Day(productInformation[0][i],productInformation[1][i],productInformation[2][i]))
 
         for day in days:
             day.GetDay(self.TradeRepublic)
             day.PushData()
-        print(f'Apple Informationen: ID:{days[0].Aktie_ID} Name: {days[0].name} Url: {days[0].URL} Preise: {days[0].prices}')
+    def CollectWeekData(self):
+        productInformation = self.DBConector.GetProducts()
+        print(f'Produkt informationen {productInformation}')
+        weeks = []
+        #len(productInformation[0])
+        for i in range(len(productInformation[0])):
+            weeks.append(Week(productInformation[0][i],productInformation[1][i],productInformation[2][i]))
+
+        for week in weeks:
+            week.GetWeek(self.TradeRepublic)
+            week.PushData()
+
 
 
 

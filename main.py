@@ -29,7 +29,7 @@ driver = webdriver.Edge(service=service, options=options)
 Engine = Engine(driver)
 Engine.start()
 #Engine.PushProducts()
-Engine.CollectDayData()
+Engine.CollectWeekData()
 
 
 
