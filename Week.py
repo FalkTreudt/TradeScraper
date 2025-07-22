@@ -15,7 +15,7 @@ class Week:
 
     def GetWeek(self,tradeRepublic):
         self.prices = tradeRepublic.GetDataFromURI(self.URL)
-        self.times = tradeRepublic.GetDailyTimes(self.prices)
+        self.times = tradeRepublic.GetWeeklyTimes(self.prices)
     def GetWeekFromDB(self,index,data):
         data = data
         if index in data:

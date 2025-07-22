@@ -14,7 +14,6 @@ class TradeRepublic:
     def __init__(self, driver):
         self.driver = driver
         self.url = 'https://app.traderepublic.com/login'
-        self.clock = Clock()
 
     def HandleWebDriverSignature(self):
         # Manipulation von JavaScript, um "navigator.webdriver" zu falsifizieren
@@ -149,6 +148,45 @@ class TradeRepublic:
         prices = self.convert_prices(y_values)
         self.prices = prices
         return prices  # Nur die Y-Werte (Preise) zurückgeben
+    def GetPrices(self,reference):
+        try:
+            chart = self.driver.find_element(By.ID, 'mainChart')
+        except Exception as e:
+            print("Fehler: Das Chart-Element konnte nicht gefunden werden.", e)
+            return []
+
+        path = self.driver.find_element(By.ID, 'chartPriceLine')
+        d_attr = path.get_attribute('d')
+
+        coordinates = re.findall(r'[ML]\s?(\d+\.\d+),(\d+\.\d+)', d_attr)
+
+        x_values = []
+        y_values = []
+
+        # Durch die Koordinaten iterieren und in Listen speichern
+        for coord in coordinates:
+            x_values.append(float(coord[0]))  # X-Wert (Zeitpunkt)
+            y_values.append(float(coord[1]))  # Y-Wert (Preis)
+
+        # Überprüfen, ob überhaupt Werte extrahiert wurden
+        if not x_values or not y_values:
+            print("Fehler: Keine Koordinaten gefunden.")
+            return []  # Leere Liste zurückgeben, falls keine Koordinaten gefunden wurden
+
+
+
+        adjusted_values = [reference - y for y in y_values]
+
+        prices = self.convert_prices(y_values)
+        self.prices = prices
+        return prices  # Nur die Y-Werte (Preise) zurückgeben
+
+
+
+
+
+
+
 
 
     def convert_prices(self,prices):
@@ -166,10 +204,18 @@ class TradeRepublic:
     def GetDailyTimes(self,prices):
         print("Starting Dailytimes")
         times = []
-        clock = Clock()
+        clock = Clock(7,40)
         for i in range(len(prices)):
             times.append(clock.GetTime())
             clock.increaseMinutes(10)
+        return times
+    def GetWeeklyTimes(self,prices):
+        print("Starting Dailytimes")
+        times = []
+        clock = Clock(7,0)
+        for i in range(len(prices)):
+            times.append(clock.GetWeekTime())
+            clock.increaseHour()
         return times
 
 
