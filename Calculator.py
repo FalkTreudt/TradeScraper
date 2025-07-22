@@ -26,8 +26,7 @@ class Calculator:
             days.append(newDay)
         data = self.connector.GetCurrentDays()
         for i in range(len(days)):
-            days[i].GetDayFromDB(i, data)
-
+            days[i].GetDayFromDB(i+1, data)
         return days
 
 
@@ -37,15 +36,18 @@ class Calculator:
 
     def GetBestProducts(self):
         print('start Getting Best products')
-        self.slopes = []
+        self.slopes = [[],[]]
         self.days = self.GetDaysFromDB()
-
-        print(f'Länge von Days: {len(self.days)}')
+        days = self.days
+        print(f'day1 {days[52].name} Preise: {days[52].prices}')
 
         for i in range(len(self.days)):
-            self.slopes.append(self.CalcRegression(self.days[i]))
+            self.days[i].slope = self.CalcRegression(self.days[i])
 
-        print(f'Maximale Steigung {max(self.slopes)} bei der ID: {self.slopes.index(max(self.slopes))}')
-        self.days[self.slopes.index(max(self.slopes))].DrawDay()
-        print(f'Aktie: {self.days[self.slopes.index(max(self.slopes))].name}')
+        max_slope = max(day.slope for day in days)
+        best_day = max(days, key=lambda d: d.slope)
+
+        print(f'Maximale Steigung {best_day.slope} bei der ID: {best_day.Aktie_ID} mit den Preisen: {best_day.prices}')
+        best_day.DrawDay()
+        print(f'Aktie: {best_day.name}')
 

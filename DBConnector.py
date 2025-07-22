@@ -78,6 +78,7 @@ class DBConnector:
              data[aktie_id]["preise"].append(preis)
              data[aktie_id]["zeiten"].append(zeit)
             self.dayData = data
+            print(f'Data an stelle 52: {data[52]}')
             return data  # Dictionary mit allen Daten
 
         except mysql.connector.Error as err:

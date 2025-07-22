@@ -10,6 +10,8 @@ class Day:
         self.name = name
         self.URL = URL
         self.Aktie_ID = self.GetProductID(name)
+        self.slope = 0
+
 
     def GetDay(self,tradeRepublic):
         self.prices = tradeRepublic.GetDataFromURI(self.URL)
@@ -105,6 +107,6 @@ class Day:
             connector = DBConnector()
             connector.Startconnection()
             connector.PushDay(self)
-            connector.GetNewID()
+            #connector.GetNewID()
             connector.closeConnection()
 

@@ -47,16 +47,19 @@ class Engine:
                 day = Day(data[0][i], data[1][i], data[2][i])
                 day.GetDay(self.TradeRepublic)
                 day.PushData()
+
     def CollectDayData(self):
         productInformation = self.DBConector.GetProducts()
-        print(productInformation)
+        print(f'Produkt informationen {productInformation}')
         days = []
-        for i in range(len(productInformation[0])):
+        #len(productInformation[0])
+        for i in range(1):
             days.append(Day(productInformation[0][i],productInformation[1][i],productInformation[2][i]))
+
         for day in days:
             day.GetDay(self.TradeRepublic)
             day.PushData()
-
+        print(f'Apple Informationen: ID:{days[0].Aktie_ID} Name: {days[0].name} Url: {days[0].URL} Preise: {days[0].prices}')
 
 
 

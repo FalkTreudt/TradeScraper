@@ -25,17 +25,12 @@ options.add_argument("user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) Apple
 #Engine.GetDays()
 
 
-
-
-
-
-
 calc = Calculator()
 #calc.GetProducts()
 
 con = DBConnector()
 con.Startconnection()
-con.GetCurrentDays()
+#con.GetCurrentDays()
 
 
 
@@ -44,6 +39,8 @@ con.GetCurrentDays()
 
 
 calc.GetBestProducts()
+
+
 
 
 #con.GetCurrentDataFromID(1)
