@@ -1,6 +1,7 @@
 from TradeRepublic import TradeRepublic
 import mysql.connector
 from datetime import datetime
+from datetime import datetime, timedelta
 
 class DBConnector:
     def __init__(self):
@@ -88,11 +89,43 @@ class DBConnector:
              data[aktie_id]["preise"].append(preis)
              data[aktie_id]["zeiten"].append(zeit)
             self.dayData = data
-            print(f'Data an stelle 52: {data[52]}')
             return data  # Dictionary mit allen Daten
 
         except mysql.connector.Error as err:
             print(f"Fehler beim Laden der Daten von ID : {err}")
+
+    def GetCurrentWeek(self):
+        try:
+            ids_str = ",".join(str(i) for i in range(self.GetNumberOfProducts()))
+            self.cursor.execute(f"SELECT Aktie_ID, preis, zeit FROM PreiseWoche WHERE Aktie_ID IN ({ids_str})")
+            result = self.cursor.fetchall()
+
+            data = {}
+            for aktie_id, preis, zeit_str in result:
+                if aktie_id not in data:
+                    data[aktie_id] = {"preise": [], "zeiten": []}
+
+                zeit = self.parse_week_time(zeit_str)
+                if zeit is not None:
+                    data[aktie_id]["preise"].append(preis)
+                    data[aktie_id]["zeiten"].append(zeit)
+
+            self.weekData = data
+            return data
+
+        except mysql.connector.Error as err:
+            print(f"Fehler beim Laden der Wochen-Daten: {err}")
+
+    def parse_week_time(self,zeit_str):
+        """Konvertiert 'Tag:Stunde:Minute' → datetime (Montag als Woche-Start)."""
+        try:
+            day, hour, minute = map(int, zeit_str.split(":"))
+            week_start = datetime.today().replace(hour=0, minute=0, second=0, microsecond=0)
+            week_start -= timedelta(days=week_start.weekday())  # Montag dieser Woche
+            return week_start + timedelta(days=day, hours=hour, minutes=minute)
+        except Exception as e:
+            print(f"Fehler beim Parsen der Zeit: {zeit_str} – {e}")
+            return None
     def GetNewID(self):
         print('Start Check next ID')
         try:

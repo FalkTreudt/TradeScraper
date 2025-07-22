@@ -27,8 +27,6 @@ class Week:
             self.times =[]
 
 
-
-
     def DrawWeek(self):
         if len(self.prices) == len(self.times):
             # Berechnung der Regressionslinie mit den Text-Zeitangaben
@@ -57,10 +55,26 @@ class Week:
             # Zeige den Graphen an
             fig.show()
 
-    def time_to_minutes(self, time_str):
-        """Konvertiert eine Zeit im Format HH:MM in Minuten seit Mitternacht"""
-        time_obj = datetime.strptime(time_str, "%H:%M")
-        return time_obj.hour * 60 + time_obj.minute
+    def time_to_minutes(self, time_input):
+        if isinstance(time_input, datetime):
+            # Gesamtminuten seit Wochenstart
+            return time_input.weekday() * 1440 + time_input.hour * 60 + time_input.minute
+        elif isinstance(time_input, str):
+            try:
+                # Wenn Format Tag:Stunde:Minute übergeben wird
+                if ":" in time_input and time_input.count(":") == 2:
+                    day, hour, minute = map(int, time_input.split(":"))
+                    return day * 1440 + hour * 60 + minute
+                else:
+                    # Fallback auf einfaches HH:MM
+                    time_obj = datetime.strptime(time_input, "%H:%M")
+                    return time_obj.hour * 60 + time_obj.minute
+            except ValueError:
+                print(f"Ungültiges Zeitformat: {time_input}")
+                return 0
+        else:
+            print(f"Unbekannter Zeittyp: {type(time_input)}")
+            return 0
 
     def GetSlope(self):
 

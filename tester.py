@@ -30,16 +30,19 @@ calc = Calculator()
 
 con = DBConnector()
 con.Startconnection()
+con.GetCurrentWeek()
 #con.GetCurrentDays()
-
-
-
-
-
-
-
-
+calc.GetBestWeekProducts()
 calc.GetBestProducts()
+
+
+
+
+
+
+
+
+#calc.GetBestProducts()
 
 
 
