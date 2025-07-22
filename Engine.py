@@ -19,15 +19,14 @@ class Engine:
 
     def start(self):
         self.TradeRepublic.Login()
+        self.DBConector.Startconnection()
 
     def PushProducts(self):
         data = self.TradeRepublic.GetProducts()
-        self.DBConector.Startconnection()
         self.DBConector.PushProducts(data[0],data[1])
 
 
     def GetDays(self):
-        self.DBConector.Startconnection()
         countedProducts = self.DBConector.GetNumberOfProducts()
         threads = []
 
@@ -40,9 +39,7 @@ class Engine:
             thread.join()
 
     def GetNewDay(self):
-        if True == False:
             print("Start Getting Dailys, please wait!")
-            self.DBConector.Startconnection()
             countedProducts = self.DBConector.GetNumberOfProducts()
             data = self.DBConector.GetProducts()
 
@@ -50,19 +47,16 @@ class Engine:
                 day = Day(data[0][i], data[1][i], data[2][i])
                 day.GetDay(self.TradeRepublic)
                 day.PushData()
-        print(f"Thread {threading.current_thread().name} started")
-        time.sleep(5)
-        print(f"Thread {threading.current_thread().name} finished")
+    def CollectDayData(self):
+        productInformation = self.DBConector.GetProducts()
+        print(productInformation)
+        days = []
+        for i in range(len(productInformation[0])):
+            days.append(Day(productInformation[0][i],productInformation[1][i],productInformation[2][i]))
+        for day in days:
+            day.GetDay(self.TradeRepublic)
+            day.PushData()
 
-    def GetBestProduct(self):
-        calc = Calculator()
-        calc.GetDaysFromDB()
 
-        threads = []
-
-
-
-        for thread in threads:
-            thread.join()
 
 

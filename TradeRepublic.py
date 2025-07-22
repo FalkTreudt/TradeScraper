@@ -244,9 +244,7 @@ class TradeRepublic:
 
 
 
-    # Aufruf der Funktion zum Zeichnen des Graphen
 
-    #Logging in to TradeRepublic
     def Login(self):
         self.driver.get(self.url)
         self.HandleWebDriverSignature()
@@ -271,7 +269,6 @@ class TradeRepublic:
             prices=[]
         print(f'Daten lesen von URL beendet: {prices}')
         return prices
-    #def GetAllDailyData(self,day,urls):
 
     def GetProducts(self):
         self.driver.get('https://app.traderepublic.com/browse/stock')
@@ -312,7 +309,7 @@ class TradeRepublic:
             last_height = new_height  # Setze die neue Höhe der Seite als die letzte Höhe
             resultData = [stocksName,stocksURL]
 
-
+        print("--------Finished collecting products-------")
         return resultData
 
 

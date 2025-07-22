@@ -148,7 +148,17 @@ class DBConnector:
             return data
         except mysql.connector.Error as err:
             print(f"Fehler beim Checken der ID: {err}")
-
+    def GetProductID(self,name):
+        print('Start getting Product_ID')
+        try:
+            self.cursor.execute(f"SELECT Aktie_ID FROM Aktien WHERE name= '{name}'")
+            result = self.cursor.fetchall()
+            name = ''
+            for row in result:
+                name = row[0]
+            return name
+        except mysql.connector.Error as err:
+            print(f"Fehler beim holen der ID mit dem Namen {name}: {err}")
     def GetNumberOfProducts(self):
         print('Start getting Number of Products')
         try:

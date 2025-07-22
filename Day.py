@@ -4,12 +4,12 @@ import plotly.graph_objects as go
 from datetime import datetime
 
 class Day:
-    def __init__(self, ID, name, URL):
+    def __init__(self, ID, name,URL):
         self.prices = []
         self.times = []
         self.name = name
         self.URL = URL
-        self.Aktie_ID = ID
+        self.Aktie_ID = self.GetProductID(name)
 
     def GetDay(self,tradeRepublic):
         self.prices = tradeRepublic.GetDataFromURI(self.URL)
@@ -94,6 +94,11 @@ class Day:
             return m, b
         else:
             return (-100),(-100)
+    def GetProductID(self,name):
+        connector = DBConnector()
+        connector.Startconnection()
+        return connector.GetProductID(name)
+
 
     def PushData(self):
         if len(self.prices) == len(self.times):
