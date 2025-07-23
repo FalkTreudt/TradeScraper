@@ -6,6 +6,7 @@ from Engine import Engine
 from selenium import webdriver
 from selenium.webdriver.edge.service import Service
 from selenium import webdriver
+from StrategyEngine import StrategyEngine
 from selenium.webdriver.chrome.options import Options
 from HeadlessTradeRepublic import HeadlessTradeRepublic
 import time
@@ -34,12 +35,20 @@ calc = Calculator()
 
 con = DBConnector()
 con.Startconnection()
-con.GetCurrentWeek()
+#con.GetCurrentWeek()
 #con.GetCurrentDays()
 #calc.GetBestWeekProducts()
 #calc.GetBestProducts()
 #calc.GetBestMonthProducts()
-calc.GetBestYearProducts()
+#calc.GetBestYearProducts()
+
+#con.GetProducts()
+
+#calc.EvaluateProducts()
+
+engine = StrategyEngine()
+#results = engine.evaluate_all_parallel()
+engine.analyze_by_id(58)
 
 
 

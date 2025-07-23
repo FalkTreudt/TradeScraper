@@ -33,6 +33,19 @@ class DBConnector:
             self.connection.close()
             print("Datenbankverbindung geschlossen.")
 
+
+
+    def PushDay(self,Day):
+        print('Lade Daten hoch')
+        current_date = datetime.now()
+        formatted_date = current_date.strftime('%Y-%m-%d')
+        try:
+            for i in range(len(Day.prices)):
+                self.cursor.execute(f"INSERT INTO Preise VALUES ('{Day.Aktie_ID}', '{Day.times[i]}','{formatted_date}','{Day.prices[i]}')")
+            self.connection.commit()
+        except mysql.connector.Error as err:
+            print(f"Fehler beim Hochladen der Daten: {err}")
+
     def PushWeek(self, Week):
         print('Lade Wochendaten hoch')
         current_date = datetime.now().strftime('%Y-%m-%d')

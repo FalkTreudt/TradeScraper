@@ -5,12 +5,14 @@ from Year import Year
 from DBConnector import DBConnector
 from concurrent.futures import ThreadPoolExecutor
 
+
 class Calculator:
     def __init__(self):
         self.TopProducts = []
         self.connector = DBConnector()
         self.connector.Startconnection()
         self.products = self.connector.GetProducts()  # [IDs, names, URLs]
+
 
     def GetProducts(self):
         return self.products
@@ -121,3 +123,4 @@ class Calculator:
         print(f'Maximale Steigung {best_year.slope} bei der ID: {best_year.Aktie_ID} mit den Preisen: {best_year.prices}')
         best_year.DrawYear()
         print(f'Aktie: {best_year.name}')
+

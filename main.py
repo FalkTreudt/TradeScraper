@@ -55,10 +55,12 @@ def getDriver():
 Engine = Engine(getDriver())
 Engine.start()
 #Engine.PushProducts()
-#Engine.CollectWeekData()
+Engine.CollectDayData()
 
-#Engine.CollectMonthData()
-Engine.CollectYearData()
+Engine.CollectWeekData()
+
+Engine.CollectMonthData()
+#Engine.CollectYearData()
 # Warten, um sicherzustellen, dass die Seite geladen wird
 time.sleep(3000)
 
