@@ -126,3 +126,63 @@ class DBConnector:
             print(f"Fehler beim Parsen der Zeit '{zeit_str}': {e}")
             return None
 
+    def PushMonth(self, month_obj):
+        print('Lade Monatsdaten hoch')
+        current_date = datetime.now().strftime('%Y-%m-%d')
+        try:
+            for i in range(len(month_obj.prices)):
+                self.cursor.execute(
+                    "INSERT INTO PreiseMonat (Aktie_ID, zeit, datum, preis) VALUES (%s, %s, %s, %s)",
+                    (month_obj.Aktie_ID, month_obj.times[i], current_date, month_obj.prices[i])
+                )
+            self.connection.commit()
+        except mysql.connector.Error as err:
+            print(f"Fehler beim Hochladen der Monatsdaten: {err}")
+
+    def GetCurrentMonth(self):
+        try:
+            self.cursor.execute("SELECT Aktie_ID, preis, zeit FROM PreiseMonat")
+            result = self.cursor.fetchall()
+
+            data = {}
+            for aktie_id, preis, zeit in result:
+                if aktie_id not in data:
+                    data[aktie_id] = {"preise": [], "zeiten": []}
+                data[aktie_id]["preise"].append(preis)
+                data[aktie_id]["zeiten"].append(zeit)
+
+            return data
+        except mysql.connector.Error as err:
+            print(f"Fehler beim Laden der Monatsdaten: {err}")
+            return {}
+
+    def PushYear(self, Year):
+        print('Lade Jahresdaten hoch')
+        current_date = datetime.now().strftime('%Y-%m-%d')
+        try:
+            for i in range(len(Year.prices)):
+                self.cursor.execute(
+                    "INSERT INTO PreiseJahr (Aktie_ID, zeit, datum, preis) VALUES (%s, %s, %s, %s)",
+                    (Year.Aktie_ID, Year.times[i], current_date, Year.prices[i])
+                )
+            self.connection.commit()
+        except mysql.connector.Error as err:
+            print(f"Fehler beim Hochladen der Monatsdaten: {err}")
+
+    def GetCurrentYear(self):
+        try:
+            self.cursor.execute("SELECT Aktie_ID, preis, zeit FROM PreiseJahr")
+            result = self.cursor.fetchall()
+
+            data = {}
+            for aktie_id, preis, zeit in result:
+                if aktie_id not in data:
+                    data[aktie_id] = {"preise": [], "zeiten": []}
+                data[aktie_id]["preise"].append(preis)
+                data[aktie_id]["zeiten"].append(zeit)
+
+            return data
+        except mysql.connector.Error as err:
+            print(f"Fehler beim Laden der JahresDaten: {err}")
+            return {}
+

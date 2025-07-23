@@ -36,9 +36,10 @@ con = DBConnector()
 con.Startconnection()
 con.GetCurrentWeek()
 #con.GetCurrentDays()
-calc.GetBestWeekProducts()
-calc.GetBestProducts()
-
+#calc.GetBestWeekProducts()
+#calc.GetBestProducts()
+#calc.GetBestMonthProducts()
+calc.GetBestYearProducts()
 
 
 
