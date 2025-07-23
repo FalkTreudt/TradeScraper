@@ -1,16 +1,18 @@
 from TradeRepublic import TradeRepublic
 from Day import Day
+from Week import Week
 from DBConnector import DBConnector
 from Clock import Clock
 import threading
 import time
 from Calculator import Calculator
+from HeadlessTradeRepublic import HeadlessTradeRepublic
 
 
 
 class Engine:
     def __init__(self, driver):
-        self.TradeRepublic = TradeRepublic(driver)
+        self.TradeRepublic = HeadlessTradeRepublic(driver)
         self.DBConector = DBConnector()
         self.driver = driver
         self.days = []
@@ -47,15 +49,29 @@ class Engine:
                 day = Day(data[0][i], data[1][i], data[2][i])
                 day.GetDay(self.TradeRepublic)
                 day.PushData()
+
     def CollectDayData(self):
         productInformation = self.DBConector.GetProducts()
-        print(productInformation)
+        print(f'Produkt informationen {productInformation}')
         days = []
+        #len(productInformation[0])
         for i in range(len(productInformation[0])):
             days.append(Day(productInformation[0][i],productInformation[1][i],productInformation[2][i]))
+
         for day in days:
             day.GetDay(self.TradeRepublic)
             day.PushData()
+    def CollectWeekData(self):
+        productInformation = self.DBConector.GetProducts()
+        print(f'Produkt informationen {productInformation}')
+        weeks = []
+        #len(productInformation[0])
+        for i in range(len(productInformation[0])):
+            weeks.append(Week(productInformation[0][i],productInformation[1][i],productInformation[2][i]))
+
+        for week in weeks:
+            week.GetWeek(self.TradeRepublic)
+            week.PushData()
 
 
 

@@ -1,6 +1,7 @@
-from TradeRepublic import TradeRepublic
+# ---------- DBConnector.py ----------
+from datetime import datetime, timedelta
 import mysql.connector
-from datetime import datetime
+from Utils import get_last_5_trading_days
 
 class DBConnector:
     def __init__(self):
@@ -9,8 +10,7 @@ class DBConnector:
         self.user = 'admin'
         self.pw = 'falk'
         self.database = 'TradeScraper'
-
-        self.days = []
+        self.product_id_cache = {}
 
     def Startconnection(self):
         try:
@@ -26,149 +26,103 @@ class DBConnector:
                 self.cursor = self.connection.cursor()
         except mysql.connector.Error as err:
             print(f"Fehler bei der Verbindung: {err}")
-            raise  # Fehlermeldung werfen, wenn die Verbindung fehlschlägt
+            raise
 
+    def closeConnection(self):
+        if self.connection.is_connected():
+            self.connection.close()
+            print("Datenbankverbindung geschlossen.")
 
-    def PushDay(self,Day):
-        print('Lade Daten hoch')
-        current_date = datetime.now()
-        formatted_date = current_date.strftime('%Y-%m-%d')
+    def PushWeek(self, Week):
+        print('Lade Wochendaten hoch')
+        current_date = datetime.now().strftime('%Y-%m-%d')
         try:
-            for i in range(len(Day.prices)):
-                self.cursor.execute(f"INSERT INTO Preise VALUES ('{Day.Aktie_ID}', '{Day.times[i]}','{formatted_date}','{Day.prices[i]}')")
-                self.connection.commit()
+            for i in range(len(Week.prices)):
+                zeit = Week.times[i]
+
+                # Zeit als datetime interpretieren, falls notwendig
+                if isinstance(zeit, str):
+                    zeit = self.parse_week_time(zeit)
+                if not isinstance(zeit, datetime):
+                    continue  # überspringen, wenn nicht interpretierbar
+
+                # Handelszeiten: nur zwischen 07:00 und 21:59 Uhr
+                if 7 <= zeit.hour <= 22:
+                    zeit_str = zeit.strftime('%Y-%m-%d %H:%M:%S')
+                    self.cursor.execute(
+                        "INSERT INTO PreiseWoche (Aktie_ID, zeit, datum, preis) VALUES (%s, %s, %s, %s)",
+                        (Week.Aktie_ID, zeit_str, current_date, Week.prices[i])
+                    )
+            self.connection.commit()
         except mysql.connector.Error as err:
-            print(f"Fehler beim Hochladen der Daten: {err}")
+            print(f"Fehler beim Hochladen der Wochendaten: {err}")
 
-    def GetPricesByID(self,ID):
-        print(f'Start loading prices of ID {ID}')
+    def GetProducts(self):
+        print('Start getting URLs')
         try:
-            self.cursor.execute(f"SELECT * FROM Preise WHERE Aktie_ID = {ID}")
+            self.cursor.execute("SELECT Aktie_ID, Name, URL FROM Aktien")
             result = self.cursor.fetchall()
-            for row in result:
-               print(row)
+            IDs, names, urls = zip(*result) if result else ([], [], [])
+            return [list(IDs), list(names), list(urls)]
         except mysql.connector.Error as err:
-            print(f"Fehler beim Laden der Daten von ID {ID}: {err}")
-    def GetCurrentDataFromID(self,ID):
-        try:
-            self.cursor.execute(f"SELECT preis, zeit FROM Preise WHERE Aktie_ID = {ID}")
-            result = self.cursor.fetchall()
-            prices = []
-            times = []
-            for row in result:
-                prices.append(row[0])
-                times.append(row[1])
-
-            return [prices,times]
-
-        except mysql.connector.Error as err:
-            print(f"Fehler beim Laden der Daten von ID {ID}: {err}")
+            print(f"Fehler beim Laden der Produkte: {err}")
+            return [[], [], []]
 
     def GetCurrentDays(self):
         try:
-            ids_str = ",".join(str(i) for i in range(self.GetNumberOfProducts()))
-            self.cursor.execute(f"SELECT Aktie_ID, preis, zeit FROM Preise WHERE Aktie_ID IN ({ids_str})")
+            self.cursor.execute("SELECT Aktie_ID, preis, zeit FROM Preise")
             result = self.cursor.fetchall()
 
-        # Dictionary für Zuordnung von ID -> [preise], [zeiten]
             data = {}
             for aktie_id, preis, zeit in result:
-             if aktie_id not in data:
+                if aktie_id not in data:
                     data[aktie_id] = {"preise": [], "zeiten": []}
-             data[aktie_id]["preise"].append(preis)
-             data[aktie_id]["zeiten"].append(zeit)
-            self.dayData = data
-            return data  # Dictionary mit allen Daten
+                data[aktie_id]["preise"].append(preis)
+                data[aktie_id]["zeiten"].append(zeit)
 
-        except mysql.connector.Error as err:
-            print(f"Fehler beim Laden der Daten von ID : {err}")
-    def GetNewID(self):
-        print('Start Check next ID')
-        try:
-            self.cursor.execute("SELECT MAX(Aktie_ID) FROM Aktien")
-            result = self.cursor.fetchall()
-            for row in result:
-                if row[0] != None:
-                    return float(row[0])
-                else:
-                    return 0
-        except mysql.connector.Error as err:
-            print(f"Fehler beim Checken der ID: {err}")
-
-    def CheckEntry(self,name):
-        print(f'Start Checking for {name}')
-        try:
-            self.cursor.execute(f"SELECT * FROM Aktien WHERE name = '{name}'")
-            result = self.cursor.fetchall()
-            if len(result) == 0:
-                return False
-            else:
-                return True
-        except mysql.connector.Error as err:
-            print(f"Fehler beim Checken der Aktie: {err}")
-
-    def CreateEntry(self, name, URL):
-        print(f'Start creating Entry for {name}')
-        try:
-            if self.CheckEntry(name) == False:
-                self.cursor.execute(
-                    f"INSERT INTO Aktien VALUES ('{self.GetNewID() + 1}', '{name}','{URL}','')")
-                self.connection.commit()
-                print(f"Eintrag für die Aktie {name} erstellt")
-            else:
-                print(f"Eintrag für die Aktie {name} bereits vorhanden!")
-        except mysql.connector.Error as err:
-            print(f"Fehler beim Erstellen der Aktie: {err}")
-
-
-    def PushProducts(self,names,urls):
-        print('Start pushing Products')
-        if len(names) == len(urls):
-            try:
-                for i in range(len(names)):
-                    self.CreateEntry(names[i],urls[i])
-            except mysql.connector.Error as err:
-                print(f"Fehler beim Pushen der Aktien: {err}")
-
-
-    def GetProducts(self):
-        print('Start getting URLS')
-        try:
-            self.cursor.execute("SELECT Aktie_ID,Name,URL FROM Aktien")
-            result = self.cursor.fetchall()
-            urls = []
-            names = []
-            IDs = []
-            for row in result:
-                IDs.append(row[0])
-                names.append(row[1])
-                urls.append(row[2])
-
-            data = [IDs,names,urls]
             return data
         except mysql.connector.Error as err:
-            print(f"Fehler beim Checken der ID: {err}")
-    def GetProductID(self,name):
-        print('Start getting Product_ID')
-        try:
-            self.cursor.execute(f"SELECT Aktie_ID FROM Aktien WHERE name= '{name}'")
-            result = self.cursor.fetchall()
-            name = ''
-            for row in result:
-                name = row[0]
-            return name
-        except mysql.connector.Error as err:
-            print(f"Fehler beim holen der ID mit dem Namen {name}: {err}")
-    def GetNumberOfProducts(self):
-        print('Start getting Number of Products')
-        try:
-            self.cursor.execute("SELECT COUNT(*) FROM Aktien")
-            result = self.cursor.fetchall()
-            count = result[0][0]
-            return int(count)
-        except mysql.connector.Error as err:
-            print(f"Fehler beim Checken der ID: {err}")
+            print(f"Fehler beim Laden der Tagesdaten: {err}")
+            return {}
 
-    def closeConnection(self):
-        self.connection.close()
+    def GetCurrentWeek(self):
+        try:
+            self.cursor.execute("SELECT Aktie_ID, preis, zeit FROM PreiseWoche")
+            result = self.cursor.fetchall()
+
+            data = {}
+            for aktie_id, preis, zeit_str in result:
+                if aktie_id not in data:
+                    data[aktie_id] = {"preise": [], "zeiten": []}
+                zeit = self.parse_week_time(zeit_str)
+                if zeit:
+                    data[aktie_id]["preise"].append(preis)
+                    data[aktie_id]["zeiten"].append(zeit)
+
+            return data
+        except mysql.connector.Error as err:
+            print(f"Fehler beim Laden der Wochen-Daten: {err}")
+            return {}
+
+    def parse_week_time(self, zeit_str):
+        from datetime import datetime, timedelta
+        try:
+            if isinstance(zeit_str, datetime):
+                return zeit_str  # schon als datetime-Objekt
+            if ":" in zeit_str and zeit_str.count(":") == 2 and "-" in zeit_str:
+                # Format: "2025-07-22 06:00:00"
+                return datetime.strptime(zeit_str, "%Y-%m-%d %H:%M:%S")
+            elif ":" in zeit_str and zeit_str.count(":") == 2:
+                # Format: "0:9:00" → eigener Zeitindex
+                day, hour, minute = map(int, zeit_str.split(":"))
+                last_5_days = get_last_5_trading_days()
+                if day < len(last_5_days):
+                    base_date = last_5_days[day].replace(hour=0, minute=0, second=0, microsecond=0)
+                    return base_date + timedelta(hours=hour, minutes=minute)
+            else:
+                print(f"Unbekanntes Zeitformat: {zeit_str}")
+                return None
+        except Exception as e:
+            print(f"Fehler beim Parsen der Zeit '{zeit_str}': {e}")
+            return None
 
