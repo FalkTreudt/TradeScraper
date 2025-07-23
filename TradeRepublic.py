@@ -1,296 +1,69 @@
-from selenium import webdriver
-from selenium.webdriver.edge.service import Service
+import time
+import re
+from datetime import datetime
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.action_chains import ActionChains
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-import time
-import re
-import plotly.graph_objects as go
 from Clock import Clock
+import plotly.graph_objects as go
+from datetime import datetime, timedelta
+
 
 class TradeRepublic:
-
     def __init__(self, driver):
         self.driver = driver
         self.url = 'https://app.traderepublic.com/login'
+        self.prices = []
 
     def HandleWebDriverSignature(self):
-        # Manipulation von JavaScript, um "navigator.webdriver" zu falsifizieren
         self.driver.execute_script("Object.defineProperty(navigator, 'webdriver', {get: () => undefined})")
 
-    #Clicks CookieButton
     def HandleCookies(self):
-        print("begin HandleCookies")
         try:
             print('Versuche Cookies zu akzeptieren')
-
-            # Warte, bis der Button mit dem angegebenen XPath sichtbar und klickbar ist (bis zu 20 Sekunden)
             button = WebDriverWait(self.driver, 20).until(
                 EC.element_to_be_clickable((By.XPATH, "/html/body/div/div[2]/div[2]/div[1]/div/div/form/section[2]/button[1]"))
             )
-
-            # Scrollen zum Button, falls es außerhalb des sichtbaren Bereichs ist
             self.driver.execute_script("arguments[0].scrollIntoView();", button)
-
-            # Klicken mit ActionChains
-            actions = ActionChains(self.driver)
-            actions.move_to_element(button).click().perform()
-
-            print("Button 'Alle Akzeptieren' wurde geklickt!")
-
+            ActionChains(self.driver).move_to_element(button).click().perform()
+            print("Cookies akzeptiert.")
         except Exception as e:
-            print(f"Fehler beim Klicken auf den Button: {e}")
+            print(f"Fehler beim Klicken auf den Cookie-Button: {e}")
 
     def EnterPhoneNumber(self):
-        print("begin EnterPhoneNumber")
-
         try:
-            print("Warten auf das Telefonnummern-Eingabefeld")
-
-            # Warte darauf, dass das Telefonnummern-Eingabefeld sichtbar ist
-            phone_input = WebDriverWait(self.driver, 3).until(
+            phone_input = WebDriverWait(self.driver, 5).until(
                 EC.visibility_of_element_located((By.ID, "loginPhoneNumber__input"))
             )
+            phone_input.clear()
+            phone_input.send_keys("17663387149")
+            print("Telefonnummer eingegeben.")
 
-            # Gebe eine Telefonnummer in das Eingabefeld ein
-            phone_input.clear()  # Stelle sicher, dass das Eingabefeld zuerst leer ist
-            phone_input.send_keys("17663387149")  # Beispielnummer für Deutschland
-
-            print("Telefonnummer eingegeben!")
-
-        except Exception as e:
-            print(f"Fehler beim Eingeben der Telefonnummer: {e}")
-
-        print('Start Clicking ContinueButton')
-
-        try:
-            print('Versuche den Button zu klicken')
-
-            # Warte, bis der Button klickbar ist (bis zu 20 Sekunden)
-            submit_button = WebDriverWait(self.driver, 3).until(
-                EC.element_to_be_clickable(
-                    (By.XPATH, "/html/body/div/div[1]/div/main/div/div[2]/section/div/div/div/div/form/button"))
+            submit_button = WebDriverWait(self.driver, 5).until(
+                EC.element_to_be_clickable((By.XPATH, "/html/body/div/div[1]/div/main/div/div[2]/section/div/div/div/div/form/button"))
             )
-
-            # Klick auf den Button
             submit_button.click()
-            print("Button wurde geklickt!")
-
+            print("Login-Button geklickt.")
         except Exception as e:
-            print(f"Fehler beim Klicken auf den Button: {e}")
+            print(f"Fehler bei Telefonnummer oder Login-Button: {e}")
 
     def EnterPin(self):
-        print("begin HandlePinInput")
-
         try:
-            print("Warten auf die PIN-Eingabefelder")
-
-            # Warte, bis alle 4 PIN-Eingabefelder sichtbar sind
-            pin_inputs = WebDriverWait(self.driver, 4).until(
+            pin_inputs = WebDriverWait(self.driver, 5).until(
                 EC.presence_of_all_elements_located((By.CLASS_NAME, "codeInput__character"))
             )
-
-            # Die PIN Zahlen
             pin_values = ['3', '1', '4', '1']
-
-            # Gebe die PIN nacheinander ein, mit Verzögerung
             for i, pin_field in enumerate(pin_inputs):
                 pin_field.send_keys(pin_values[i])
-                time.sleep(0.1)  # Verzögerung für realistischere Eingabe
+                time.sleep(0.1)
 
-            while True:
-                if self.driver.current_url != 'https://app.traderepublic.com/login':
-                    break
+            while self.driver.current_url == 'https://app.traderepublic.com/login':
                 time.sleep(1)
 
-
-            print("PIN wurde erfolgreich eingegeben!")
-
+            print("PIN erfolgreich eingegeben.")
         except Exception as e:
-            print(f"Fehler beim Eingeben der PIN: {e}")
-
-    def GetPrices(self,reference):
-        # Warten, bis das Diagramm geladen ist
-        try:
-            chart = self.driver.find_element(By.ID, 'mainChart')  # Das SVG-Element
-        except Exception as e:
-            print("Fehler: Das Chart-Element konnte nicht gefunden werden.", e)
-            return []  # Falls das Chart-Element nicht gefunden wird, eine leere Liste zurückgeben
-
-        # Extrahieren der 'd'-Eigenschaft des SVG-Pfads, der die Preislinie enthält
-        path = self.driver.find_element(By.ID, 'chartPriceLine')
-        d_attr = path.get_attribute('d')
-
-        # Extrahieren der X- und Y-Koordinaten aus dem 'd'-Attribut
-        # Die 'L' (Linie) und 'M' (Move To) Kommandos enthalten die Koordinaten
-        coordinates = re.findall(r'[ML]\s?(\d+\.\d+),(\d+\.\d+)', d_attr)
-
-        # Erstellen von leeren Listen für X-Werte (Zeitpunkte) und Y-Werte (Preise)
-        x_values = []
-        y_values = []
-
-        # Durch die Koordinaten iterieren und in Listen speichern
-        for coord in coordinates:
-            x_values.append(float(coord[0]))  # X-Wert (Zeitpunkt)
-            y_values.append(float(coord[1]))  # Y-Wert (Preis)
-
-        # Überprüfen, ob überhaupt Werte extrahiert wurden
-        if not x_values or not y_values:
-            print("Fehler: Keine Koordinaten gefunden.")
-            return []  # Leere Liste zurückgeben, falls keine Koordinaten gefunden wurden
-
-        # Optional: Den extrahierten Preis in der Konsole ausgeben
-
-
-        adjusted_values = [reference - y for y in y_values]
-
-        prices = self.convert_prices(y_values)
-        self.prices = prices
-        return prices  # Nur die Y-Werte (Preise) zurückgeben
-    def GetPrices(self,reference):
-        try:
-            chart = self.driver.find_element(By.ID, 'mainChart')
-        except Exception as e:
-            print("Fehler: Das Chart-Element konnte nicht gefunden werden.", e)
-            return []
-
-        path = self.driver.find_element(By.ID, 'chartPriceLine')
-        d_attr = path.get_attribute('d')
-
-        coordinates = re.findall(r'[ML]\s?(\d+\.\d+),(\d+\.\d+)', d_attr)
-
-        x_values = []
-        y_values = []
-
-        # Durch die Koordinaten iterieren und in Listen speichern
-        for coord in coordinates:
-            x_values.append(float(coord[0]))  # X-Wert (Zeitpunkt)
-            y_values.append(float(coord[1]))  # Y-Wert (Preis)
-
-        # Überprüfen, ob überhaupt Werte extrahiert wurden
-        if not x_values or not y_values:
-            print("Fehler: Keine Koordinaten gefunden.")
-            return []  # Leere Liste zurückgeben, falls keine Koordinaten gefunden wurden
-
-
-
-        adjusted_values = [reference - y for y in y_values]
-
-        prices = self.convert_prices(y_values)
-        self.prices = prices
-        return prices  # Nur die Y-Werte (Preise) zurückgeben
-
-
-
-
-
-
-
-
-
-    def convert_prices(self,prices):
-        print('start converting prices')
-        maxVal = self.GetMaxPrice(9)
-        calcFactor = self.calcFactor()
-
-
-        converted_prices = [maxVal - (price*calcFactor) for price in prices]
-
-        print(converted_prices)
-        print('end converting prices')
-        return converted_prices
-
-    def GetDailyTimes(self,prices):
-        print("Starting Dailytimes")
-        times = []
-        clock = Clock(7,40)
-        for i in range(len(prices)):
-            times.append(clock.GetTime())
-            clock.increaseMinutes(10)
-        return times
-    def GetWeeklyTimes(self,prices):
-        print("Starting Dailytimes")
-        times = []
-        clock = Clock(7,0)
-        for i in range(len(prices)):
-            times.append(clock.GetWeekTime())
-            clock.increaseHour()
-        return times
-
-
-    def GetReferenceValue(self):
-        try:
-            reference_value = self.driver.find_element(By.CSS_SELECTOR,
-                                                       "#root > g:nth-child(1) > g.reference-value > g > text")
-            # Extrahiere den Text des Referenzwertes
-            value = reference_value.text.strip()
-            value = value.replace('.', '').replace(',', '.')
-            value = float(value)
-
-            if value:
-                print(f"Gefundener Referenzwert: {value}")
-            else:
-                print("Kein Referenzwert gefunden.")
-
-            return float(value)
-
-        except Exception as e:
-            print(f"Fehler beim Extrahieren des Referenzwerts: {e}")
-            return None
-
-    def GetMaxPrice(self,child):
-        try:
-            reference_value = self.driver.find_element(By.CSS_SELECTOR,
-                                                       f"#root > g:nth-child(1) > g.y-axis > g:nth-child({child}) > text")
-            # Extrahiere den Text des Referenzwertes
-            value = reference_value.text.strip()
-            value = value.replace('.', '').replace(',', '.')
-            value = float(value)
-
-            if value:
-                print(f"Gefundener MaxWert: {value}")
-            else:
-                print("Kein MaxWert gefunden.")
-
-            return float(value)
-
-        except Exception as e:
-            print(f"Fehler beim Extrahieren des Maxwerts bei child({child})")
-            if(child != 0):
-                return self.GetMaxPrice(child-1)
-    def GetRefPx(self):
-        try:
-            element = self.driver.find_element(By.CSS_SELECTOR,
-                                                       "#root > g:nth-child(1) > g.reference-value > g")
-            transform_value = element.get_attribute("transform")
-
-            if "translate" in transform_value:
-                # Extrahieren des Y-Werts
-                translate_part = transform_value.split("translate(")[1]  # Alles nach "translate("
-                y_value = translate_part.split(",")[1].split(")")[0]  # Den Y-Wert nach dem Komma und vor der Klammer
-                print(f"Extrahierter Y-Wert: {y_value}")
-                return float(y_value)
-            else:
-                print("Das transform-Attribut enthält keinen 'translate'-Wert.")
-
-
-        except Exception as e:
-            print(f"Fehler beim Extrahieren des RefPx")
-            return None
-
-
-
-    ###Calculates the CashPerPixel needed for later calc in self.GetPrices Method
-    def calcFactor(self):
-        max = float(self.GetMaxPrice(9))
-        ref = float(self.GetReferenceValue())
-        refPX = float(self.GetRefPx())
-
-        return (max-ref)/refPX
-
-
-
+            print(f"Fehler beim PIN-Eingeben: {e}")
 
     def Login(self):
         self.driver.get(self.url)
@@ -298,64 +71,155 @@ class TradeRepublic:
         self.HandleCookies()
         self.EnterPhoneNumber()
         self.EnterPin()
-
-        #self.GetDataFromURI('https://app.traderepublic.com/instrument/DE0007030009?timeframe=1d')
-        #self.GetTimes(1)
         time.sleep(1)
 
-    def GetDataFromURI(self,url):
-        print('Daten lesen von URL gestartet')
-        currentURI = url
-        self.driver.get(currentURI)
+    def GetPrices(self, reference):
+        try:
+            chart = self.driver.find_element(By.ID, 'mainChart')
+        except Exception as e:
+            print("Fehler: Chart nicht gefunden.", e)
+            return []
+
+        try:
+            path = self.driver.find_element(By.ID, 'chartPriceLine')
+            d_attr = path.get_attribute('d')
+            coordinates = re.findall(r'[ML]\s?(\d+\.\d+),(\d+\.\d+)', d_attr)
+
+            x_values = [float(coord[0]) for coord in coordinates]
+            y_values = [float(coord[1]) for coord in coordinates]
+
+            if not y_values:
+                print("Keine Preis-Koordinaten gefunden.")
+                return []
+
+            return self.convert_prices(y_values)
+
+        except Exception as e:
+            print(f"Fehler beim Extrahieren der Preise: {e}")
+            return []
+
+    def convert_prices(self, prices):
+        print('Starte Preis-Konvertierung')
+        maxVal = self.GetMaxPrice(9)
+        refPx = self.GetRefPx()
+        ref = self.GetReferenceValue()
+
+        if None in [maxVal, refPx, ref]:
+            print("Fehlerhafte Werte zur Preisumrechnung (max, ref, px)")
+            return []
+
+        factor = (maxVal - ref) / refPx
+        converted = [maxVal - (p * factor) for p in prices]
+        print('Konvertierte Preise:', converted)
+        return converted
+
+    def GetDailyTimes(self, prices):
+        times = []
+        clock = Clock(7, 40)
+        for _ in prices:
+            times.append(clock.GetTime())
+            clock.increaseMinutes(10)
+        return times
+
+    def GetWeeklyTimes(self, prices):
+        def GetWeeklyTimes(self, prices):
+            print("Starting WeeklyTimes with Handelszeiten")
+            times = []
+            days = get_last_5_trading_days()  # liefert datetime-Objekte für die letzten 5 Handelstage
+
+            current_index = 0
+            for day_index, day in enumerate(days):
+                current_time = day.replace(hour=7, minute=0, second=0, microsecond=0)
+                end_time = day.replace(hour=22, minute=0)
+
+                while current_time < end_time and current_index < len(prices):
+                    # Format: "0:9:00"
+                    tag = day_index  # 0 = ältester Handelstag
+                    stunde = current_time.hour
+                    minute = current_time.minute
+                    times.append(f"{tag}:{stunde}:{minute:02d}")
+                    current_time += timedelta(minutes=10)
+                    current_index += 1
+
+                if current_index >= len(prices):
+                    break
+
+            return times
+
+    def GetReferenceValue(self):
+        try:
+            element = self.driver.find_element(By.CSS_SELECTOR, "#root > g:nth-child(1) > g.reference-value > g > text")
+            value = element.text.strip().replace('.', '').replace(',', '.')
+            return float(value)
+        except Exception as e:
+            print(f"Fehler beim Referenzwert: {e}")
+            return None
+
+    def GetRefPx(self):
+        try:
+            element = self.driver.find_element(By.CSS_SELECTOR, "#root > g:nth-child(1) > g.reference-value > g")
+            transform_value = element.get_attribute("transform")
+            if "translate" in transform_value:
+                y_value = transform_value.split("translate(")[1].split(",")[1].split(")")[0]
+                return float(y_value)
+            else:
+                print("Kein translate-Wert in transform.")
+                return None
+        except Exception as e:
+            print(f"Fehler bei RefPx: {e}")
+            return None
+
+    def GetMaxPrice(self, child):
+        try:
+            selector = f"#root > g:nth-child(1) > g.y-axis > g:nth-child({child}) > text"
+            value = self.driver.find_element(By.CSS_SELECTOR, selector).text.strip()
+            value = value.replace('.', '').replace(',', '.')
+            return float(value)
+        except Exception:
+            if child > 0:
+                return self.GetMaxPrice(child - 1)
+            print("MaxPrice nicht gefunden.")
+            return None
+
+    def GetDataFromURI(self, url):
+        print(f'Lese Daten von: {url}')
+        self.driver.get(url)
         time.sleep(1)
         reference = self.GetReferenceValue()
-        if reference:
+        if reference is not None:
             prices = self.GetPrices(reference)
-            print(f'Kein Referenzwert bei: {url} gefunden')
         else:
-            prices=[]
-        print(f'Daten lesen von URL beendet: {prices}')
+            print(f'Kein Referenzwert bei {url} gefunden.')
+            prices = []
         return prices
 
     def GetProducts(self):
+        print("Lade Produktliste...")
         self.driver.get('https://app.traderepublic.com/browse/stock')
-
         stocksName = []
         stocksURL = []
+        last_height = self.driver.execute_script("return document.body.scrollHeight")
 
-        last_height = self.driver.execute_script("return document.body.scrollHeight")  # Die aktuelle Höhe der Seite
-
-        for i in range(10):
-            # Finde alle Zeilen in der Tabelle, die Aktieninformationen enthalten
+        for _ in range(10):
             rows = self.driver.find_elements(By.CSS_SELECTOR, 'tr.tableRow')
+            previous_count = len(stocksName)
 
-            # Extrahiere Namen und URLs der Aktien
             for row in rows:
                 try:
-                    name_element = row.find_element(By.CSS_SELECTOR, '.instrumentResult__name')
-                    name = name_element.text.strip()
-
-                    url_element =  row.find_element(By.CSS_SELECTOR, 'span.instrumentResult__details')
-                    logo_url = url_element.get_attribute('innerHTML')
-                    realURL = f'https://app.traderepublic.com/instrument/{logo_url}?timeframe='
-
+                    name = row.find_element(By.CSS_SELECTOR, '.instrumentResult__name').text.strip()
+                    url_code = row.find_element(By.CSS_SELECTOR, 'span.instrumentResult__details').get_attribute('innerHTML')
+                    full_url = f'https://app.traderepublic.com/instrument/{url_code}?timeframe='
                     stocksName.append(name)
-                    stocksURL.append(realURL)
+                    stocksURL.append(full_url)
                 except Exception as e:
-                    print(f"Fehler beim Extrahieren der Daten für eine Zeile: {e}")
+                    print(f"Fehler bei einer Zeile: {e}")
 
-            # Scrollen bis zum Ende der Seite
             self.driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
             time.sleep(1)
-            # Überprüfe, ob wir das Ende der Seite erreicht haben
             new_height = self.driver.execute_script("return document.body.scrollHeight")
-            if new_height == last_height:
-                break  # Wenn die Höhe der Seite nicht mehr wächst, haben wir das Ende erreicht
+            if new_height == last_height or len(stocksName) == previous_count:
+                break
+            last_height = new_height
 
-            last_height = new_height  # Setze die neue Höhe der Seite als die letzte Höhe
-            resultData = [stocksName,stocksURL]
-
-        print("--------Finished collecting products-------")
-        return resultData
-
-
+        print("Produkte gesammelt:", len(stocksName))
+        return [stocksName, stocksURL]

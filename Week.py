@@ -1,126 +1,148 @@
-from TradeRepublic import TradeRepublic
 from DBConnector import DBConnector
+from datetime import datetime, timedelta
 import plotly.graph_objects as go
-from datetime import datetime
 
 class Week:
-    def __init__(self, ID, name,URL):
+    def __init__(self, ID, name, URL):
         self.prices = []
         self.times = []
         self.name = name
         self.URL = URL + "5d"
-        self.Aktie_ID = self.GetProductID(name)
+        self.Aktie_ID = ID
         self.slope = 0
+        self.trading_days = get_last_5_trading_days()
 
-
-    def GetWeek(self,tradeRepublic):
+    def GetWeek(self, tradeRepublic):
         self.prices = tradeRepublic.GetDataFromURI(self.URL)
-        self.times = tradeRepublic.GetWeeklyTimes(self.prices)
-    def GetWeekFromDB(self,index,data):
-        data = data
-        if index in data:
-            self.prices = [float(p) for p in data[index]['preise']]
-            self.times = data[index]['zeiten']
+        self.trading_days = get_last_5_trading_days()
+        self.times = self.generate_week_times(len(self.prices))  # Erzeugt echte Datumsobjekte
+
+    def generate_week_times(self, n):
+        """
+        Gibt eine Liste von datetime-Zeitpunkten, stündlich verteilt über 5 Handelstage, zurück.
+        """
+        times = []
+        clock = WeekClock(self.trading_days)
+        for _ in range(n):
+            times.append(clock.get_current_time())
+            clock.increase()
+        return times
+
+    def GetWeekFromDB(self, aktie_id, data):
+        self.trading_days = get_last_5_trading_days()
+        if aktie_id in data:
+            self.prices = [float(p) for p in data[aktie_id]['preise']]
+            self.times = data[aktie_id]['zeiten']
         else:
-            print(f'index: {index} nicht vorhanden')
-            self.prices =[]
-            self.times =[]
-
-
-    def DrawWeek(self):
-        if len(self.prices) == len(self.times):
-            # Berechnung der Regressionslinie mit den Text-Zeitangaben
-            times_in_minutes = [self.time_to_minutes(time) for time in self.times]
-
-            # Berechne die lineare Regression
-            m, b = self.GetSlopeForDraw()
-
-            # Berechne die Y-Werte für die Regressionslinie
-            regression_line = [m * x + b for x in times_in_minutes]
-
-            # Erstellen des Plots
-            fig = go.Figure(
-                data=go.Scatter(x=self.times, y=self.prices, mode='lines+markers', name='Preise'))
-
-            # Füge die Regressionslinie hinzu
-            fig.add_trace(go.Scatter(x=self.times, y=regression_line, mode='lines', name='Regressionslinie',
-                                     line=dict(color='red')))
-
-            # Titel und Achsenbeschriftungen hinzufügen
-            fig.update_layout(title="Preisentwicklung mit Regressionslinie",
-                              xaxis_title="Zeitpunkte",
-                              yaxis_title="Preis (€)",
-                              template="plotly_dark")
-
-            # Zeige den Graphen an
-            fig.show()
+            print(f'Aktie-ID {aktie_id} nicht vorhanden')
+            self.prices = []
+            self.times = []
 
     def time_to_minutes(self, time_input):
         if isinstance(time_input, datetime):
-            # Gesamtminuten seit Wochenstart
-            return time_input.weekday() * 1440 + time_input.hour * 60 + time_input.minute
-        elif isinstance(time_input, str):
-            try:
-                # Wenn Format Tag:Stunde:Minute übergeben wird
-                if ":" in time_input and time_input.count(":") == 2:
-                    day, hour, minute = map(int, time_input.split(":"))
-                    return day * 1440 + hour * 60 + minute
-                else:
-                    # Fallback auf einfaches HH:MM
-                    time_obj = datetime.strptime(time_input, "%H:%M")
-                    return time_obj.hour * 60 + time_obj.minute
-            except ValueError:
-                print(f"Ungültiges Zeitformat: {time_input}")
-                return 0
-        else:
-            print(f"Unbekannter Zeittyp: {type(time_input)}")
-            return 0
+            base = self.trading_days[0].replace(hour=0, minute=0, second=0, microsecond=0)
+            return int((time_input - base).total_seconds() / 60)
+        return 0
 
     def GetSlope(self):
-
-        x = [self.time_to_minutes(time) for time in self.times]
+        x = [self.time_to_minutes(t) for t in self.times]
         y = self.prices
         n = len(x)
+        if n == 0 or len(x) != len(y):
+            return -100
+
         sum_x = sum(x)
         sum_y = sum(y)
-        sum_xy = sum([x[i] * y[i] for i in range(n)])
-        sum_x2 = sum([x_i ** 2 for x_i in x])
+        sum_xy = sum(x[i] * y[i] for i in range(n))
+        sum_x2 = sum(x_i ** 2 for x_i in x)
 
-        if (n * sum_x2 - sum_x ** 2) != 0:
-            # Berechne die Steigung (m) und den Y-Achsenabschnitt (b)
-            m = (n * sum_xy - sum_x * sum_y) / (n * sum_x2 - sum_x ** 2)
-            return m
-        else:
-            return (-100)
+        denom = n * sum_x2 - sum_x ** 2
+        if denom == 0:
+            return -100
 
+        m = (n * sum_xy - sum_x * sum_y) / denom
+        return m
 
     def GetSlopeForDraw(self):
-        x = [self.time_to_minutes(time) for time in self.times]
+        x = [self.time_to_minutes(t) for t in self.times]
         y = self.prices
         n = len(x)
+        if n == 0 or len(x) != len(y):
+            return -100, -100
+
         sum_x = sum(x)
         sum_y = sum(y)
-        sum_xy = sum([x[i] * y[i] for i in range(n)])
-        sum_x2 = sum([x_i ** 2 for x_i in x])
+        sum_xy = sum(x[i] * y[i] for i in range(n))
+        sum_x2 = sum(x_i ** 2 for x_i in x)
 
-        # Berechne die Steigung (m) und den Y-Achsenabschnitt (b)
-        if (n * sum_x2 - sum_x ** 2)!= 0 and n != 0:
-            m = (n * sum_xy - sum_x * sum_y) / (n * sum_x2 - sum_x ** 2)
-            b = (sum_y - m * sum_x) / n
-            return m, b
-        else:
-            return (-100),(-100)
-    def GetProductID(self,name):
-        connector = DBConnector()
-        connector.Startconnection()
-        return connector.GetProductID(name)
+        denom = n * sum_x2 - sum_x ** 2
+        if denom == 0:
+            return -100, -100
 
+        m = (n * sum_xy - sum_x * sum_y) / denom
+        b = (sum_y - m * sum_x) / n
+        return m, b
+
+    def DrawWeek(self):
+        if len(self.prices) != len(self.times):
+            print("Unterschiedliche Länge von Preisen und Zeiten")
+            return
+
+        x = [self.time_to_minutes(t) for t in self.times]
+        m, b = self.GetSlopeForDraw()
+        regression_line = [m * xi + b for xi in x]
+
+        x_labels = [t.strftime("%a %d.%m. %H:%M") if isinstance(t, datetime) else str(t) for t in self.times]
+
+        fig = go.Figure()
+        fig.add_trace(go.Scatter(x=x_labels, y=self.prices, mode='lines+markers', name='Preise'))
+        fig.add_trace(go.Scatter(x=x_labels, y=regression_line, mode='lines', name='Regression', line=dict(color='red')))
+
+        fig.update_layout(title=f"Preisentwicklung (Woche) – {self.name}",
+                          xaxis_title="Zeit",
+                          yaxis_title="Preis (€)",
+                          template="plotly_dark")
+        fig.show()
 
     def PushData(self):
         if len(self.prices) == len(self.times):
             connector = DBConnector()
             connector.Startconnection()
             connector.PushWeek(self)
-            #connector.GetNewID()
             connector.closeConnection()
 
+
+def get_last_5_trading_days(today=None):
+    if today is None:
+        today = datetime.today()
+
+    trading_days = []
+    current = today
+
+    while len(trading_days) < 5:
+        if current.weekday() < 5:
+            trading_days.insert(0, current.replace(hour=0, minute=0, second=0, microsecond=0))
+        current -= timedelta(days=1)
+
+    return trading_days
+
+
+class WeekClock:
+    """
+    Erzeugt einen Zeitgenerator, der pro Aufruf stündlich weitergeht über 5 echte Handelstage hinweg.
+    """
+    def __init__(self, trading_days):
+        self.trading_days = trading_days
+        self.day_index = 0
+        self.hour = 7
+
+    def get_current_time(self):
+        return self.trading_days[self.day_index] + timedelta(hours=self.hour)
+
+    def increase(self):
+        self.hour += 1
+        if self.hour >= 23:
+            self.hour = 7
+            self.day_index += 1
+            if self.day_index >= len(self.trading_days):
+                self.day_index = len(self.trading_days) - 1  # capped fallback

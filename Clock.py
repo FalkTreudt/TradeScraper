@@ -11,10 +11,10 @@ class Clock:
             self.min = 0
             self.hours += 1
     def increaseHour(self):
-        if self.hours != 23:
+        if self.hours != 21:
             self.hours += 1
         else:
-            self.hours = 0
+            self.hours = 7
             self.day += 1
 
     def GetTime(self):
