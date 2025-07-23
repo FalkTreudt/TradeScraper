@@ -48,17 +48,17 @@ def getDriver():
 
     # Link for All Products in TradeRepublic: https://app.traderepublic.com/browse/stock
 
+    return driver
 
 
 
-
-Engine = Engine(getHeadlessDriver())
+Engine = Engine(getDriver())
 Engine.start()
 #Engine.PushProducts()
-Engine.CollectWeekData()
+#Engine.CollectWeekData()
 
-
-
+#Engine.CollectMonthData()
+Engine.CollectYearData()
 # Warten, um sicherzustellen, dass die Seite geladen wird
 time.sleep(3000)
 
