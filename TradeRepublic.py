@@ -8,6 +8,7 @@ from selenium.webdriver.support import expected_conditions as EC
 from Clock import Clock
 import plotly.graph_objects as go
 from datetime import datetime, timedelta
+import Utils
 
 
 class TradeRepublic:
@@ -122,29 +123,29 @@ class TradeRepublic:
         return times
 
     def GetWeeklyTimes(self, prices):
-        def GetWeeklyTimes(self, prices):
-            print("Starting WeeklyTimes with Handelszeiten")
-            times = []
-            days = get_last_5_trading_days()  # liefert datetime-Objekte für die letzten 5 Handelstage
+        print("Starting WeeklyTimes with Handelszeiten")
+        times = []
+        days = get_last_5_trading_days()  # liefert datetime-Objekte für die letzten 5 Handelstage
 
-            current_index = 0
-            for day_index, day in enumerate(days):
-                current_time = day.replace(hour=7, minute=0, second=0, microsecond=0)
-                end_time = day.replace(hour=22, minute=0)
+        current_index = 0
+        for day_index, day in enumerate(days):
+            current_time = day.replace(hour=7, minute=0, second=0, microsecond=0)
+            end_time = day.replace(hour=22, minute=0)
 
-                while current_time < end_time and current_index < len(prices):
-                    # Format: "0:9:00"
-                    tag = day_index  # 0 = ältester Handelstag
-                    stunde = current_time.hour
-                    minute = current_time.minute
-                    times.append(f"{tag}:{stunde}:{minute:02d}")
-                    current_time += timedelta(minutes=10)
-                    current_index += 1
+            while current_time < end_time and current_index < len(prices):
+                # Format: "0:9:00"
+                tag = day_index  # 0 = ältester Handelstag
+                stunde = current_time.hour
+                minute = current_time.minute
+                times.append(f"{tag}:{stunde}:{minute:02d}")
+                current_time += timedelta(minutes=10)
+                current_index += 1
 
-                if current_index >= len(prices):
-                    break
+            if current_index >= len(prices):
+                break
 
-            return times
+        return times
+
 
     def GetReferenceValue(self):
         try:

@@ -6,12 +6,13 @@ from Clock import Clock
 import threading
 import time
 from Calculator import Calculator
+from HeadlessTradeRepublic import HeadlessTradeRepublic
 
 
 
 class Engine:
     def __init__(self, driver):
-        self.TradeRepublic = TradeRepublic(driver)
+        self.TradeRepublic = HeadlessTradeRepublic(driver)
         self.DBConector = DBConnector()
         self.driver = driver
         self.days = []

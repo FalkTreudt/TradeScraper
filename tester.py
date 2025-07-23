@@ -5,6 +5,10 @@ from Calculator import Calculator
 from Engine import Engine
 from selenium import webdriver
 from selenium.webdriver.edge.service import Service
+from selenium import webdriver
+from selenium.webdriver.chrome.options import Options
+from HeadlessTradeRepublic import HeadlessTradeRepublic
+import time
 
 
 driver_path = r"C:\Users\Falk\Downloads\edgedriver_win64\msedgedriver.exe"  # Verwende Raw String (r"") oder doppelten Backslash
@@ -53,3 +57,16 @@ calc.GetBestProducts()
 
 
 #calc.GetBestProducts()
+
+def create_driver(headless=True):
+    options = Options()
+    if headless:
+        options.add_argument("--headless=new")  # Für neuere Chrome-Versionen
+        options.add_argument("--window-size=1920,1080")
+    options.add_argument("--disable-blink-features=AutomationControlled")
+    options.add_experimental_option("excludeSwitches", ["enable-automation"])
+    options.add_experimental_option('useAutomationExtension', False)
+
+    driver = webdriver.Chrome(options=options)
+    driver.set_page_load_timeout(30)
+    return driver
