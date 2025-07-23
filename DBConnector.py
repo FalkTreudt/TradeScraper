@@ -37,7 +37,7 @@ class DBConnector:
         try:
             for i in range(len(Day.prices)):
                 self.cursor.execute(f"INSERT INTO Preise VALUES ('{Day.Aktie_ID}', '{Day.times[i]}','{formatted_date}','{Day.prices[i]}')")
-                self.connection.commit()
+            self.connection.commit()
         except mysql.connector.Error as err:
             print(f"Fehler beim Hochladen der Daten: {err}")
     def PushWeek(self,Week):
@@ -47,7 +47,7 @@ class DBConnector:
         try:
             for i in range(len(Week.prices)):
                 self.cursor.execute(f"INSERT INTO PreiseWoche VALUES ('{Week.Aktie_ID}', '{Week.times[i]}','{formatted_date}','{Week.prices[i]}')")
-                self.connection.commit()
+            self.connection.commit()
         except mysql.connector.Error as err:
             print(f"Fehler beim Hochladen der Daten: {err}")
 
