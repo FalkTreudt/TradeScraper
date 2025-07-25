@@ -2,14 +2,14 @@
 from datetime import datetime, timedelta
 import mysql.connector
 from Utils import get_last_5_trading_days
-
+import threading
 
 class DBConnector:
     def __init__(self):
-        self.IP = '192.168.178.47'
-        self.port = 3306
-        self.user = 'admin'
-        self.pw = 'falk'
+        self.IP = '192.168.178.97'
+        self.port = 3307
+        self.user = 'root'
+        self.pw = '1234'
         self.database = 'TradeScraper'
         self.product_id_cache = {}
 
@@ -72,6 +72,7 @@ class DBConnector:
             print(f"Fehler beim Hochladen der Wochendaten: {err}")
 
     def GetProducts(self):
+        self.Startconnection()
         print('Start getting URLs')
         try:
             self.cursor.execute("SELECT Aktie_ID, Name, URL FROM Aktien")
@@ -286,4 +287,28 @@ class DBConnector:
                 print(f"⚠️  Keine Daten für {zeitraum} bei ID {aktie_id}")
 
         return result
+
+    def check_missing_ids_in_tables(self, ids):
+        self.Startconnection()
+        cursor = self.connection.cursor()
+
+        id_set = set(ids)
+        id_str = ','.join(str(i) for i in ids)
+        tabellen = ["Preise", "PreiseWoche", "PreiseMonat", "PreiseJahr"]
+        fehlende = {t: set() for t in tabellen}
+
+        for tabelle in tabellen:
+            query = f"""
+                   SELECT DISTINCT Aktie_ID FROM {tabelle}
+                   WHERE Aktie_ID IN ({id_str})
+               """
+            cursor.execute(query)
+            vorhandene_ids = set(row[0] for row in cursor.fetchall())
+            fehlende[tabelle] = id_set - vorhandene_ids
+
+        cursor.close()
+        return fehlende
+
+
+
 
