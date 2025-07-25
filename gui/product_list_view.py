@@ -39,6 +39,8 @@ class ProductListView(tk.Frame):
         # Buttons
         ttk.Button(self, text="Zurück", command=self._go_back).pack(pady=10)
         ttk.Button(self, text="Produkte auf Fehler überprüfen", command=self.check_data_completeness).pack(pady=10)
+        ttk.Button(self, text="🛠️ Repariere fehlende Daten", command=self.repair_missing_data_threaded).pack(pady=10)
+
 
         self.load_products()
 
@@ -95,4 +97,10 @@ class ProductListView(tk.Frame):
 
         self.tree.item(item_id, values=current_values, tags=(tag,))
 
+    def repair_missing_data_threaded(self):
+        threading.Thread(target=self.repair_missing_data, daemon=True).start()
+
+    def repair_missing_data(self):
+        self.controller.repair_missing_data()
+        self.after(100, self.check_data_completeness)
 

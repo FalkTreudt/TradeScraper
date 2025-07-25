@@ -133,7 +133,45 @@ class Engine:
         driver = webdriver.Edge(service=service, options=options)
         return driver
 
+    def repair_missing_data(self):
+        print("🛠️ Repariere fehlende Daten...")
+        self.DBConector.Startconnection()
+        product_data = self.DBConector.GetProducts()
+        ids, names, urls = product_data
 
+        fehlende = self.DBConector.check_missing_ids_in_tables(ids)
+
+        for i, aktie_id in enumerate(ids):
+            fehlende_tabs = [t for t in fehlende if aktie_id in fehlende[t]]
+            if not fehlende_tabs:
+                continue
+
+            name = names[i]
+            url = urls[i]
+
+            if "Preise" in fehlende_tabs:
+                print(f"→ Tagesdaten fehlen für {name}")
+                day = Day(aktie_id, name, url)
+                day.GetDay(self.TradeRepublic)
+                day.PushData()
+
+            if "PreiseWoche" in fehlende_tabs:
+                print(f"→ Wochendaten fehlen für {name}")
+                week = Week(aktie_id, name, url)
+                week.GetWeek(self.TradeRepublic)
+                week.PushData()
+
+            if "PreiseMonat" in fehlende_tabs:
+                print(f"→ Monatsdaten fehlen für {name}")
+                month = Month(aktie_id, name, url)
+                month.GetMonth(self.TradeRepublic)
+                month.PushData()
+
+            if "PreiseJahr" in fehlende_tabs:
+                print(f"→ Jahresdaten fehlen für {name}")
+                year = Year(aktie_id, name, url)
+                year.GetYear(self.TradeRepublic)
+                year.PushData()
 
 
 

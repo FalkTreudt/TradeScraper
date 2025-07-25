@@ -37,6 +37,15 @@ class EngineController:
         print("📊 Jahresdaten abrufen...")
         self.engine.CollectYearData()
 
+    def repair_missing_data(self):
+        print("🛠️ Repariere fehlende Daten aus TradeRepublic...")
+        if not hasattr(self.engine, 'TradeRepublic'):
+            driver = getDriver()
+            self.engine.start(driver)
+
+        self.engine.repair_missing_data()
+
+
 def getDriver():
     # Pfad zum Microsoft Edge WebDriver
     driver_path = r"C:\Users\Falk\Downloads\edgedriver_win64\msedgedriver.exe"  # Verwende Raw String (r"") oder doppelten Backslash
