@@ -26,12 +26,13 @@ class ProductListView(tk.Frame):
         scrollbar.pack(side="right", fill="y")
 
         # Treeview
-        self.tree = ttk.Treeview(container, yscrollcommand=scrollbar.set, columns=("ID", "Name", "URL"), show="headings")
+        self.tree = ttk.Treeview(container, yscrollcommand=scrollbar.set, columns=("ID", "Name", "URL", "Bemerkung"), show="headings")
         self.tree.pack(fill="both", expand=True)
 
         self.tree.heading("ID", text="ID")
         self.tree.heading("Name", text="Name")
         self.tree.heading("URL", text="URL")
+        self.tree.heading("Bemerkung", text="Bemerkung")
 
         scrollbar.config(command=self.tree.yview)
 
@@ -49,7 +50,8 @@ class ProductListView(tk.Frame):
             self.product_ids = ids  # Für spätere Nutzung in Prüfung
 
             for i in range(len(ids)):
-                self.tree.insert("", "end", values=(ids[i], names[i], urls[i]))
+                self.tree.insert("", "end", values=(ids[i], names[i], urls[i], ""))
+
 
             self.products_loaded = True
 
@@ -58,13 +60,39 @@ class ProductListView(tk.Frame):
         self.manager.show_view(StartView, self.controller)
 
     def check_data_completeness(self):
-        ids = self.product_data[0]
+        print("🔍 Prüfe Vollständigkeit der Produktdaten...")
+        ids = self.product_ids
         fehlende = self.controller.engine.DBConector.check_missing_ids_in_tables(ids)
 
         for i, aktie_id in enumerate(ids):
-            incomplete = any(aktie_id in fehlende[table] for table in fehlende)
+            fehlende_tabs = [t for t, s in fehlende.items() if aktie_id in s]
+            is_complete = len(fehlende_tabs) == 0
+            bemerkung = ", ".join(f"Keine Daten in {t}" for t in fehlende_tabs)
+
             tag = f"row{i}"
-            color = "#224422" if not incomplete else "#441111"
+            color = "#c8f7c5" if is_complete else "#f7c5c5"
+
             self.tree.tag_configure(tag, background=color)
-            self.tree.item(self.tree.get_children()[i], tags=(tag,))
+
+            # Werte aktualisieren
+            item_id = self.tree.get_children()[i]
+            current_values = list(self.tree.item(item_id, "values"))
+            current_values[3] = bemerkung
+            self.tree.item(item_id, values=current_values, tags=(tag,))
+
+    def update_result(self, aktie_id, is_complete, missing_tables):
+        i = self.product_ids.index(aktie_id)
+        tag = f"row{i}"
+        color = "#c8f7c5" if is_complete else "#f7c5c5"
+        bemerkung = ", ".join(f"Keine Daten in {tbl}" for tbl in missing_tables) if missing_tables else ""
+
+        self.tree.tag_configure(tag, background=color)
+
+        # Bestehende Werte holen
+        item_id = self.tree.get_children()[i]
+        current_values = list(self.tree.item(item_id, "values"))
+        current_values[3] = bemerkung  # Spalte "Bemerkung"
+
+        self.tree.item(item_id, values=current_values, tags=(tag,))
+
 
