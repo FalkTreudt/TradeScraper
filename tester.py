@@ -52,12 +52,21 @@ con.Startconnection()
 
 #calc.EvaluateProducts()
 
-engine = StrategyEngine()
+#engine = StrategyEngine()
 #results = engine.evaluate_all_parallel()
 #engine.analyze_by_id(58)
 
-engine.analyze_all(top_n=15)  # Zeige z. B. Top 15 Empfehlungen
+#engine.analyze_all(top_n=15)  # Zeige z. B. Top 15 Empfehlungen
 
+if __name__ == "__main__":
+    engine = StrategyEngine()
+    top_results = engine.analyze_all()
+
+    print("\n🔝 Beste Aktien basierend auf FinalRecommendation:\n")
+    for result in top_results:
+        name = result["name"]
+        score = result["scores"].get("FinalRecommendation", "Fehler")
+        print(f"{name}: {score}")
 
 
 

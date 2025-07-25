@@ -4,6 +4,7 @@ from gui.controller import EngineController
 from gui.view_manager import ViewManager
 from gui.product_list_view import ProductListView
 from gui.data_collection_view import DataCollectionView
+from gui.evaluation_view import EvaluationView
 
 
 
@@ -17,7 +18,9 @@ class StartView(tk.Frame):
 
         buttons = [
             ("📦 Produkte anzeigen", lambda: manager.show_view(ProductListView, controller)),
-            ("🛠️ Daten sammeln", lambda: manager.show_view(DataCollectionView, controller))
+            ("🛠️ Daten sammeln", lambda: manager.show_view(DataCollectionView, controller)),
+            ("📊 Datenauswertung", lambda: manager.show_view(EvaluationView,controller))
+
         ]
 
         for text, command in buttons:

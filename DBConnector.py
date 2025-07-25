@@ -85,8 +85,12 @@ class DBConnector:
 
     def GetCurrentDays(self):
         try:
-            self.cursor.execute("SELECT Aktie_ID, preis, zeit FROM Preise")
-            result = self.cursor.fetchall()
+            conn = self.get_new_connection()
+            cursor = conn.cursor()
+            cursor.execute("SELECT Aktie_ID, preis, zeit FROM Preise")
+            result = cursor.fetchall()
+            cursor.close()
+            conn.close()
 
             data = {}
             for aktie_id, preis, zeit in result:
@@ -96,26 +100,28 @@ class DBConnector:
                 data[aktie_id]["zeiten"].append(zeit)
 
             return data
-        except mysql.connector.Error as err:
+        except Exception as err:
             print(f"Fehler beim Laden der Tagesdaten: {err}")
             return {}
 
     def GetCurrentWeek(self):
         try:
-            self.cursor.execute("SELECT Aktie_ID, preis, zeit FROM PreiseWoche")
-            result = self.cursor.fetchall()
+            conn = self.get_new_connection()
+            cursor = conn.cursor()
+            cursor.execute("SELECT Aktie_ID, preis, zeit FROM PreiseWoche")
+            result = cursor.fetchall()
+            cursor.close()
+            conn.close()
 
             data = {}
-            for aktie_id, preis, zeit_str in result:
+            for aktie_id, preis, zeit in result:
                 if aktie_id not in data:
                     data[aktie_id] = {"preise": [], "zeiten": []}
-                zeit = self.parse_week_time(zeit_str)
-                if zeit:
-                    data[aktie_id]["preise"].append(preis)
-                    data[aktie_id]["zeiten"].append(zeit)
+                data[aktie_id]["preise"].append(preis)
+                data[aktie_id]["zeiten"].append(self.parse_week_time(zeit))
 
             return data
-        except mysql.connector.Error as err:
+        except Exception as err:
             print(f"Fehler beim Laden der Wochen-Daten: {err}")
             return {}
 
@@ -156,8 +162,12 @@ class DBConnector:
 
     def GetCurrentMonth(self):
         try:
-            self.cursor.execute("SELECT Aktie_ID, preis, zeit FROM PreiseMonat")
-            result = self.cursor.fetchall()
+            conn = self.get_new_connection()
+            cursor = conn.cursor()
+            cursor.execute("SELECT Aktie_ID, preis, zeit FROM PreiseMonat")
+            result = cursor.fetchall()
+            cursor.close()
+            conn.close()
 
             data = {}
             for aktie_id, preis, zeit in result:
@@ -167,7 +177,7 @@ class DBConnector:
                 data[aktie_id]["zeiten"].append(zeit)
 
             return data
-        except mysql.connector.Error as err:
+        except Exception as err:
             print(f"Fehler beim Laden der Monatsdaten: {err}")
             return {}
 
@@ -232,8 +242,12 @@ class DBConnector:
 
     def GetCurrentYear(self):
         try:
-            self.cursor.execute("SELECT Aktie_ID, preis, zeit FROM PreiseJahr")
-            result = self.cursor.fetchall()
+            conn = self.get_new_connection()
+            cursor = conn.cursor()
+            cursor.execute("SELECT Aktie_ID, preis, zeit FROM PreiseJahr")
+            result = cursor.fetchall()
+            cursor.close()
+            conn.close()
 
             data = {}
             for aktie_id, preis, zeit in result:
@@ -243,8 +257,8 @@ class DBConnector:
                 data[aktie_id]["zeiten"].append(zeit)
 
             return data
-        except mysql.connector.Error as err:
-            print(f"Fehler beim Laden der JahresDaten: {err}")
+        except Exception as err:
+            print(f"Fehler beim Laden der Jahresdaten: {err}")
             return {}
 
     def GetAllProductDataByName(self, name: str):
@@ -308,6 +322,15 @@ class DBConnector:
 
         cursor.close()
         return fehlende
+
+    def get_new_connection(self):
+        return mysql.connector.connect(
+            host=self.IP,
+            port=self.port,
+            user=self.user,
+            password=self.pw,
+            database=self.database
+        )
 
 
 

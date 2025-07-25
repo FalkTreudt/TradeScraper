@@ -153,6 +153,25 @@ class Week:
 
         m = (n * sum_xy - sum_x * sum_y) / denom
         return m  # in Prozent pro Minute
+    def GetRSquared(self):
+        if self.r_squared is not None:
+            return self.r_squared
+
+        x = [self.time_to_minutes(t) for t in self.times]
+        y = self.prices
+        if len(x) != len(y) or not x:
+            self.r_squared = 0.0
+            return self.r_squared
+
+        n = len(x)
+        mean_y = sum(y) / n
+        ss_tot = sum((yi - mean_y) ** 2 for yi in y)
+
+        m, b = self.GetSlopeForDraw()
+        ss_res = sum((y[i] - (m * x[i] + b)) ** 2 for i in range(n))
+
+        self.r_squared = 0.0 if ss_tot == 0 else max(0.0, min(1.0, 1 - (ss_res / ss_tot)))
+        return self.r_squared
 
 
 def get_last_5_trading_days(today=None):
