@@ -8,10 +8,13 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.keys import Keys
 
 from HeadlessTradeRepublic import HeadlessTradeRepublic
+from DBConnector import DBConnector
 
 class EngineController:
     def __init__(self):
         self.engine = Engine()
+        self.db = DBConnector()
+        self.db.Startconnection()
 
     def start_engine(self):
         print("🔄 Starte Engine...")

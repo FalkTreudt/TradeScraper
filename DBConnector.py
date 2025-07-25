@@ -126,7 +126,6 @@ class DBConnector:
             return {}
 
     def parse_week_time(self, zeit_str):
-        from datetime import datetime, timedelta
         try:
             if isinstance(zeit_str, datetime):
                 return zeit_str  # schon als datetime-Objekt
@@ -331,6 +330,55 @@ class DBConnector:
             password=self.pw,
             database=self.database
         )
+
+
+    def insert_simulated_purchase(self, result_dict, buyin: float):
+        self.Startconnection()
+        cursor = self.connection.cursor()
+
+        day = result_dict["day"]
+        name = result_dict["name"]
+        scores = result_dict["scores"]
+
+        if not day.prices:
+            raise ValueError("Keine aktuellen Preise verfügbar.")
+
+        last_price = day.prices[-1]
+        adjusted_buyin = buyin - 1  # 1€ Gebühr
+        shares = round(adjusted_buyin / last_price, 6)
+        value = round(shares * last_price, 2)
+        now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+
+        query = """
+            INSERT INTO portfolio (
+                name, buyin, shares, price, value, time,
+                score_trend, score_stability, score_momentum,
+                score_consistency, score_composite, score_final
+            ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+        """
+
+        data = (
+            name,
+            buyin,
+            shares,
+            last_price,
+            value,
+            now,
+            scores.get("TrendStrategy", 0),
+            scores.get("StabilityStrategy", 0),
+            scores.get("MomentumStrategy", 0),
+            scores.get("ConsistencyStrategy", 0),
+            scores.get("CompositeStrategy", 0),
+            scores.get("FinalRecommendation", 0),
+        )
+
+        cursor.execute(query, data)
+        self.connection.commit()
+        cursor.close()
+
+
+
 
 
 
