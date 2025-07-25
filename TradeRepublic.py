@@ -197,13 +197,15 @@ class TradeRepublic:
     def GetProducts(self):
         print("Lade Produktliste...")
         self.driver.get('https://app.traderepublic.com/browse/stock')
+        time.sleep(2)
         stocksName = []
         stocksURL = []
         last_height = self.driver.execute_script("return document.body.scrollHeight")
 
-        for _ in range(10):
+        for i in range(50):
             rows = self.driver.find_elements(By.CSS_SELECTOR, 'tr.tableRow')
             previous_count = len(stocksName)
+            print(f'previous_count:{previous_count} rows: {rows}')
 
             for row in rows:
                 try:
@@ -216,7 +218,7 @@ class TradeRepublic:
                     print(f"Fehler bei einer Zeile: {e}")
 
             self.driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
-            time.sleep(1)
+            time.sleep(2)
             new_height = self.driver.execute_script("return document.body.scrollHeight")
             if new_height == last_height or len(stocksName) == previous_count:
                 break

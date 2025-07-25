@@ -29,12 +29,18 @@ options.add_argument("user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) Apple
 
 #Engine.GetDays()
 
+#Tr = TradeRepublic(driver)
+#Tr.Login()
+#print(Tr.GetProducts())
+
+
 
 calc = Calculator()
 #calc.GetProducts()
 
 con = DBConnector()
 con.Startconnection()
+#print(con.GetAllProductDataByName('Exail Technologies'))
 #con.GetCurrentWeek()
 #con.GetCurrentDays()
 #calc.GetBestWeekProducts()
@@ -48,9 +54,9 @@ con.Startconnection()
 
 engine = StrategyEngine()
 #results = engine.evaluate_all_parallel()
-engine.analyze_by_id(58)
+#engine.analyze_by_id(58)
 
-
+engine.analyze_all(top_n=15)  # Zeige z. B. Top 15 Empfehlungen
 
 
 

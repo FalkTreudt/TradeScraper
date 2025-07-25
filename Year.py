@@ -11,6 +11,8 @@ class Year:
         self.Aktie_ID = ID
         self.slope = 0
         self.trading_days = get_last_trading_days()
+        self.percent_change = None
+        self.r_squared = None
 
     def GetYear(self, tradeRepublic):
         self.prices = tradeRepublic.GetDataFromURI(self.URL)
@@ -42,22 +44,29 @@ class Year:
         return 0
 
     def GetSlope(self):
-        x = [self.time_to_minutes(t) for t in self.times]
-        y = self.prices
-        if len(x) != len(y) or not x:
+        """Lineare Regression auf prozentuale Preisveränderung (%/Minute)."""
+        if len(self.prices) < 2 or len(self.prices) != len(self.times):
             return -100
+
+        base_price = self.prices[0]
+        if base_price == 0:
+            return -100
+
+        x = [self.time_to_minutes(t) for t in self.times]
+        y = [(p - base_price) / base_price * 100 for p in self.prices]  # Prozentuale Veränderung
 
         n = len(x)
         sum_x = sum(x)
         sum_y = sum(y)
         sum_xy = sum(x[i] * y[i] for i in range(n))
         sum_x2 = sum(xi ** 2 for xi in x)
-        denom = n * sum_x2 - sum_x ** 2
 
+        denom = n * sum_x2 - sum_x ** 2
         if denom == 0:
             return -100
 
-        return (n * sum_xy - sum_x * sum_y) / denom
+        m = (n * sum_xy - sum_x * sum_y) / denom
+        return m  # in Prozent pro Minute
 
     def GetSlopeForDraw(self):
         x = [self.time_to_minutes(t) for t in self.times]
@@ -105,6 +114,43 @@ class Year:
             connector.Startconnection()
             connector.PushYear(self)  # du musst PushYear in DBConnector implementieren
             connector.closeConnection()
+
+    def GetPercentChange(self):
+        if self.percent_change is not None:
+            return self.percent_change
+
+        if not self.prices or len(self.prices) < 2:
+            self.percent_change = 0.0
+        else:
+            start = self.prices[0]
+            end = self.prices[-1]
+            if start == 0:
+                self.percent_change = 0.0
+            else:
+                self.percent_change = (end - start) / start
+
+        return self.percent_change
+
+    def GetRSquared(self):
+        if self.r_squared is not None:
+            return self.r_squared
+
+        x = [self.time_to_minutes(t) for t in self.times]
+        y = self.prices
+
+        if len(x) != len(y) or not x:
+            self.r_squared = 0.0
+            return self.r_squared
+
+        n = len(x)
+        mean_y = sum(y) / n
+        ss_tot = sum((yi - mean_y) ** 2 for yi in y)
+
+        m, b = self.GetSlopeForDraw()
+        ss_res = sum((y[i] - (m * x[i] + b)) ** 2 for i in range(n))
+
+        self.r_squared = 0.0 if ss_tot == 0 else max(0.0, min(1.0, 1 - (ss_res / ss_tot)))
+        return self.r_squared
 
 
 def get_last_trading_days(today=None):

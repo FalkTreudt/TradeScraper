@@ -3,6 +3,7 @@ from datetime import datetime, timedelta
 import mysql.connector
 from Utils import get_last_5_trading_days
 
+
 class DBConnector:
     def __init__(self):
         self.IP = '192.168.178.47'
@@ -182,6 +183,52 @@ class DBConnector:
         except mysql.connector.Error as err:
             print(f"Fehler beim Hochladen der Monatsdaten: {err}")
 
+    def PushProducts(self, names, urls):
+        print('Start pushing Products')
+        if len(names) == len(urls):
+            try:
+                for i in range(len(names)):
+                    self.CreateEntry(names[i], urls[i])
+            except mysql.connector.Error as err:
+                print(f"Fehler beim Pushen der Aktien: {err}")
+
+    def GetNewID(self):
+        print('Start Check next ID')
+        try:
+            self.cursor.execute("SELECT MAX(Aktie_ID) FROM Aktien")
+            result = self.cursor.fetchall()
+            for row in result:
+                if row[0] != None:
+                    return float(row[0])
+                else:
+                    return 0
+        except mysql.connector.Error as err:
+            print(f"Fehler beim Checken der ID: {err}")
+
+    def CheckEntry(self, name):
+        print(f'Start Checking for {name}')
+        try:
+            self.cursor.execute(f"SELECT * FROM Aktien WHERE name = '{name}'")
+            result = self.cursor.fetchall()
+            if len(result) == 0:
+                return False
+            else:
+                return True
+        except mysql.connector.Error as err:
+            print(f"Fehler beim Checken der Aktie: {err}")
+    def CreateEntry(self, name, URL):
+        print(f'Start creating Entry for {name}')
+        try:
+            if self.CheckEntry(name) == False:
+                self.cursor.execute(
+                    f"INSERT INTO Aktien VALUES ('{self.GetNewID() + 1}', '{name}','{URL}','')")
+                self.connection.commit()
+                print(f"Eintrag für die Aktie {name} erstellt")
+            else:
+                print(f"Eintrag für die Aktie {name} bereits vorhanden!")
+        except mysql.connector.Error as err:
+            print(f"Fehler beim Erstellen der Aktie: {err}")
+
     def GetCurrentYear(self):
         try:
             self.cursor.execute("SELECT Aktie_ID, preis, zeit FROM PreiseJahr")
@@ -198,4 +245,45 @@ class DBConnector:
         except mysql.connector.Error as err:
             print(f"Fehler beim Laden der JahresDaten: {err}")
             return {}
+
+    def GetAllProductDataByName(self, name: str):
+        """
+        Holt Preis- und Zeitdaten für Day, Week, Month, Year anhand des Aktiennamens.
+
+        Rückgabe:
+            {
+                "day":   {"preise": [...], "zeiten": [...]},
+                "week":  {"preise": [...], "zeiten": [...]},
+                "month": {"preise": [...], "zeiten": [...]},
+                "year":  {"preise": [...], "zeiten": [...]}
+            }
+        """
+        ids, names, urls = self.GetProducts()
+        name_lower = name.lower()
+
+        try:
+            index = [n.lower() for n in names].index(name_lower)
+            aktie_id = ids[index]
+        except ValueError:
+            print(f"❌ Aktie '{name}' nicht gefunden.")
+            return {}
+
+        result = {}
+
+        for zeitraum, fetch_func in {
+            "day": self.GetCurrentDays,
+            "week": self.GetCurrentWeek,
+            "month": self.GetCurrentMonth,
+            "year": self.GetCurrentYear
+        }.items():
+            data = fetch_func()
+            if aktie_id in data:
+                preise = [float(p) for p in data[aktie_id]["preise"]]
+                zeiten = data[aktie_id]["zeiten"]
+                result[zeitraum] = {"preise": preise, "zeiten": zeiten}
+            else:
+                result[zeitraum] = {"preise": [], "zeiten": []}
+                print(f"⚠️  Keine Daten für {zeitraum} bei ID {aktie_id}")
+
+        return result
 

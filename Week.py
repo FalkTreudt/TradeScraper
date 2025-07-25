@@ -11,6 +11,8 @@ class Week:
         self.Aktie_ID = ID
         self.slope = 0
         self.trading_days = get_last_5_trading_days()
+        self.percent_change = None
+        self.r_squared = None
 
     def GetWeek(self, tradeRepublic):
         self.prices = tradeRepublic.GetDataFromURI(self.URL)
@@ -111,6 +113,47 @@ class Week:
             connector.PushWeek(self)
             connector.closeConnection()
 
+    def GetPercentChange(self):
+        if self.percent_change is not None:
+            return self.percent_change
+
+        if not self.prices or len(self.prices) < 2:
+            self.percent_change = 0.0
+        else:
+            start = self.prices[0]
+            end = self.prices[-1]
+            if start == 0:
+                self.percent_change = 0.0
+            else:
+                self.percent_change = (end - start) / start
+
+        return self.percent_change
+
+    def GetSlope(self):
+        """Lineare Regression auf prozentuale Preisveränderung (%/Minute)."""
+        if len(self.prices) < 2 or len(self.prices) != len(self.times):
+            return -100
+
+        base_price = self.prices[0]
+        if base_price == 0:
+            return -100
+
+        x = [self.time_to_minutes(t) for t in self.times]
+        y = [(p - base_price) / base_price * 100 for p in self.prices]  # Prozentuale Veränderung
+
+        n = len(x)
+        sum_x = sum(x)
+        sum_y = sum(y)
+        sum_xy = sum(x[i] * y[i] for i in range(n))
+        sum_x2 = sum(xi ** 2 for xi in x)
+
+        denom = n * sum_x2 - sum_x ** 2
+        if denom == 0:
+            return -100
+
+        m = (n * sum_xy - sum_x * sum_y) / denom
+        return m  # in Prozent pro Minute
+
 
 def get_last_5_trading_days(today=None):
     if today is None:
@@ -146,3 +189,7 @@ class WeekClock:
             self.day_index += 1
             if self.day_index >= len(self.trading_days):
                 self.day_index = len(self.trading_days) - 1  # capped fallback
+
+
+
+
