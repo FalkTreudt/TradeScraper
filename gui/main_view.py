@@ -5,6 +5,8 @@ from gui.view_manager import ViewManager
 from gui.product_list_view import ProductListView
 from gui.data_collection_view import DataCollectionView
 from gui.evaluation_view import EvaluationView
+from gui.portfolio_view import PortfolioView
+
 
 
 
@@ -19,7 +21,8 @@ class StartView(tk.Frame):
         buttons = [
             ("📦 Produkte anzeigen", lambda: manager.show_view(ProductListView, controller)),
             ("🛠️ Daten sammeln", lambda: manager.show_view(DataCollectionView, controller)),
-            ("📊 Datenauswertung", lambda: manager.show_view(EvaluationView,controller))
+            ("📊 Datenauswertung", lambda: manager.show_view(EvaluationView,controller)),
+            ("📦 Portfolio", lambda: manager.show_view(PortfolioView, controller)),
 
         ]
 

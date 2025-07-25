@@ -377,6 +377,14 @@ class DBConnector:
         self.connection.commit()
         cursor.close()
 
+    def get_portfolio_entries(self):
+        self.Startconnection()
+        cursor = self.connection.cursor(dictionary=True)
+        cursor.execute("SELECT * FROM portfolio ORDER BY time DESC")
+        results = cursor.fetchall()
+        cursor.close()
+        return results
+
 
 
 

@@ -14,7 +14,7 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.keys import Keys
-
+from selenium.webdriver.chrome.options import Options
 from HeadlessTradeRepublic import HeadlessTradeRepublic
 
 
@@ -173,5 +173,17 @@ class Engine:
                 year.GetYear(self.TradeRepublic)
                 year.PushData()
 
+    def create_driver(headless=True):
+        driver_path = r"C:\Users\Falk\Downloads\edgedriver_win64\msedgedriver.exe"  # Verwende Raw String (r"") oder doppelten Backslash
+        service = Service(driver_path)
+        options = webdriver.EdgeOptions()
+        options.use_chromium = True  # Edge basiert auf Chromium
+        options.add_argument(
+            "--disable-blink-features=AutomationControlled")  # Verhindert die Anzeige des WebDriver-Hinweises
 
+        options.add_argument(
+            "user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.36")
 
+        # WebDriver initialisieren
+        driver = webdriver.Edge(service=service, options=options)
+        return driver
